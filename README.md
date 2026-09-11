@@ -1,6 +1,6 @@
 # Rocky Bottom Home
 
-A single-page for-sale-by-owner demo for 128 Rocky Bottom Road, Sunset, SC, built with the existing Astro and Cloudflare Workers starter.
+A single-page for-sale-by-owner demo in Rocky Bottom, Sunset, SC, built with the existing Astro and Cloudflare Workers starter.
 
 ## Preview
 
