@@ -1,6 +1,11 @@
 ---
 import '../styles/home.css';
 const photo = 'https://images.unsplash.com/photo-1771680968896-cfd9b8f7244e?auto=format&fit=crop&w=2200&q=85';
+const gallery = [
+  { label: 'Full exterior · sample', position: '50% 50%', zoom: 1 },
+  { label: 'Deck detail · sample crop', position: '25% 65%', zoom: 1.5 },
+  { label: 'Woodland detail · sample crop', position: '85% 35%', zoom: 1.5 },
+];
 ---
 <!doctype html>
 <html lang="en">
@@ -29,23 +34,67 @@ const photo = 'https://images.unsplash.com/photo-1771680968896-cfd9b8f7244e?auto
     <div class="feature-strip" aria-label="Home highlights"><span>New construction</span><span>Modern design</span><span>Mountain setting</span><span>Off scenic Highway 178</span></div>
     <section class="home-section section" id="home">
       <div><p class="eyebrow">SMALL FOOTPRINT. FRESH START.</p><h2>Make yourself<br />at home in<br /><em>Rocky Bottom.</em></h2></div>
-      <div class="home-details"><p class="lead">A small, modern, newly built mountain home in Rocky Bottom.</p><p>Set in a tiny neighborhood off Highway 178, this home brings a modern point of view to a place known for its rocks, black bears, and scenic mountain drive.</p><p>Rocky Bottom Creek runs through the neighborhood, adding to the character of this corner of Sunset, South Carolina.</p><dl class="facts"><div><dt>Asking price</dt><dd>Coming soon</dd></div><div><dt>Beds & baths</dt><dd>To be confirmed</dd></div><div><dt>Interior size</dt><dd>To be confirmed</dd></div><div><dt>Lot size</dt><dd>To be confirmed</dd></div></dl></div>
+      <div class="home-details"><p class="lead">A small, modern, newly built mountain home in Rocky Bottom.</p><p>Set in a tiny neighborhood off Highway 178, this home brings a modern point of view to a place known for its rocks, black bears, and scenic mountain drive.</p><p>Rocky Bottom Creek runs through the neighborhood, adding to the character of this corner of Sunset, South Carolina.</p><dl class="facts"><div><dt>Asking price</dt><dd>Coming soon</dd></div><div><dt>Beds & baths</dt><dd>To be confirmed</dd></div><div><dt>Interior size</dt><dd>To be confirmed</dd></div><div><dt>Lot size</dt><dd>To be confirmed</dd></div></dl>
+        <details class="full-home-details">
+          <summary><span class="details-closed">View full home details</span><span class="details-open">Hide full home details</span><span class="details-toggle" aria-hidden="true">+</span></summary>
+          <div class="full-details-content">
+            <p class="details-intro">Additional specifications are coming soon. Unconfirmed details are marked below.</p>
+            <h3>Home & construction</h3>
+            <dl class="expanded-facts">
+              <div><dt>Construction</dt><dd>New construction</dd></div>
+              <div><dt>Style</dt><dd>Modern mountain home</dd></div>
+              <div><dt>Year completed</dt><dd>To be confirmed</dd></div>
+              <div><dt>Stories</dt><dd>To be confirmed</dd></div>
+              <div><dt>Foundation</dt><dd>To be confirmed</dd></div>
+              <div><dt>Roof & exterior</dt><dd>To be confirmed</dd></div>
+            </dl>
+            <h3>Interior & systems</h3>
+            <dl class="expanded-facts">
+              <div><dt>Kitchen & appliances</dt><dd>To be confirmed</dd></div>
+              <div><dt>Flooring</dt><dd>To be confirmed</dd></div>
+              <div><dt>Heating & cooling</dt><dd>To be confirmed</dd></div>
+              <div><dt>Laundry</dt><dd>To be confirmed</dd></div>
+              <div><dt>Water & wastewater</dt><dd>To be confirmed</dd></div>
+              <div><dt>Internet availability</dt><dd>To be confirmed</dd></div>
+            </dl>
+            <h3>Land & ownership</h3>
+            <dl class="expanded-facts">
+              <div><dt>Parking</dt><dd>To be confirmed</dd></div>
+              <div><dt>Outdoor living space</dt><dd>To be confirmed</dd></div>
+              <div><dt>HOA & restrictions</dt><dd>To be confirmed</dd></div>
+              <div><dt>Property taxes</dt><dd>To be confirmed</dd></div>
+            </dl>
+          </div>
+        </details>
+      </div>
     </section>
     <section class="gallery-section section" id="photos">
       <div class="section-heading"><div><p class="eyebrow">PICTURE THE POSSIBILITIES</p><h2>A closer look.</h2></div><p>Property photography is coming soon.<br />This sample shows the gallery layout.</p></div>
-      <button class="gallery-image" id="open-photo" aria-label="Enlarge sample inspiration photograph"><img src={photo} alt="Sample modern woodland home, not the property for sale" loading="lazy" width="1800" height="1000" /><span class="gallery-caption">Sample inspiration photo <span>View larger ↗</span></span></button>
-      <p class="photo-credit">Sample photograph by <a href="https://unsplash.com/photos/modern-house-with-wooden-deck-in-snowy-landscape-Wd8Nm8iXglQ" target="_blank" rel="noreferrer">Clay Banks / Unsplash</a>. Not a photograph of this home or its location.</p>
+      <div class="photo-gallery" role="region" aria-roledescription="carousel" aria-label="Home photo gallery" tabindex="0">
+        <div class="gallery-stage" id="gallery-stage">
+          <button class="gallery-image" id="open-photo" aria-label="Enlarge current sample photo"><img id="gallery-current" src={photo} alt="Sample modern woodland home, not the property for sale" loading="lazy" width="1800" height="1000" draggable="false" /><span class="gallery-caption"><span id="gallery-caption">Full exterior · sample</span><span>View larger ↗</span></span></button>
+          <button class="photo-arrow photo-prev" data-step="-1" aria-label="Previous photo">‹</button>
+          <button class="photo-arrow photo-next" data-step="1" aria-label="Next photo">›</button>
+          <span class="photo-count" id="photo-count" aria-live="polite" aria-atomic="true">1 / {gallery.length}</span>
+        </div>
+        <div class="thumbnail-navigation">
+          <button class="thumbnail-arrow" data-step="-1" aria-label="Previous photo">‹</button>
+          <div class="thumbnail-strip" aria-label="Choose a photo">
+            {gallery.map((item, index) => <button class="photo-thumbnail" data-index={index} data-caption={item.label} data-position={item.position} data-zoom={item.zoom} aria-label={`Show photo ${index + 1}: ${item.label}`} aria-current={index === 0 ? 'true' : 'false'}><span class="thumbnail-crop"><img src={photo.replace('w=2200', 'w=400')} alt="" loading="lazy" width="160" height="100" style={`object-position:${item.position};transform:scale(${item.zoom});transform-origin:${item.position}`} /></span></button>)}
+          </div>
+          <button class="thumbnail-arrow" data-step="1" aria-label="Next photo">›</button>
+        </div>
+        <p class="gallery-help">Swipe the photo, use the arrows, or choose a thumbnail.</p>
+      </div>
+      <p class="photo-credit">Sample photograph by <a href="https://unsplash.com/photos/modern-house-with-wooden-deck-in-snowy-landscape-Wd8Nm8iXglQ" target="_blank" rel="noreferrer">Clay Banks / Unsplash</a>. Three demo views of the same sample image; not this home or its location.</p>
     </section>
-    <section class="location-section section" id="location"><div class="location-title"><p class="eyebrow">THE ROAD HOME</p><div class="road-number" aria-label="Highway 178"><span>SOUTH CAROLINA</span>178</div><h2>The drive is<br />part of the <em>draw.</em></h2></div><div class="location-copy"><p class="lead">Between Pickens, South Carolina,<br />and Rosman, North Carolina.</p><p>Highway 178 winds through the mountains, connecting small communities along a scenic drive. Just off that road is Rocky Bottom: a tiny neighborhood with a creek and a character all its own.</p><div class="location-address"><span>THE NEIGHBORHOOD</span><strong>Rocky Bottom</strong><p>Sunset, South Carolina</p></div></div></section>
+    <section class="location-section section" id="location"><div class="location-title"><p class="eyebrow">THE ROAD HOME</p><div class="road-number" aria-label="Highway 178"><span>SOUTH CAROLINA</span>178</div><h2>The drive is<br />part of the <em>draw.</em></h2></div><div class="location-copy"><p class="lead">Between Pickens, South Carolina,<br />and Brevard, North Carolina.</p><p>Highway 178 winds through the mountains, connecting small communities along a scenic drive. Along that route is Rocky Bottom: a historic tiny neighborhood with a mountain creek, wildlife, and a character all its own.</p><div class="location-address"><span>THE NEIGHBORHOOD</span><strong>Rocky Bottom - South Carolina</strong></div></div></section>
     <section class="contact-section section" id="contact"><p class="eyebrow">FOR SALE BY OWNER</p><h2>Could this be<br /><em>your next chapter?</em></h2><p>Get in touch with the owner to learn more or arrange a visit.</p><div class="contact-pending">Owner contact details coming soon.</div><p class="contact-note">This is a design preview. Tour requests are not yet available.</p></section>
   </main>
   <footer><a class="footer-brand" href="#">ROCKY BOTTOM HOME</a><span>Rocky Bottom · Sunset, SC</span><a href="#">Back to top ↑</a></footer>
-  <dialog id="photo-dialog" aria-label="Sample inspiration photograph"><button class="close-photo" autofocus>Close ×</button><img src={photo} alt="Enlarged sample modern woodland home; not the property for sale" /><p>Sample inspiration photograph — not the property for sale.</p></dialog>
+  <dialog id="photo-dialog" aria-label="Enlarged home photo gallery"><button class="close-photo" autofocus>Close ×</button><div class="dialog-stage"><div class="dialog-image-crop"><img id="dialog-current" src={photo} alt="Sample modern woodland home, not the property for sale" draggable="false" /></div><button class="photo-arrow photo-prev" data-step="-1" aria-label="Previous photo">‹</button><button class="photo-arrow photo-next" data-step="1" aria-label="Next photo">›</button></div><p id="dialog-caption" aria-live="polite">Full exterior · sample — 1 / {gallery.length}</p></dialog>
   <script>
-    const dialog = document.querySelector<HTMLDialogElement>('#photo-dialog');
-    document.querySelector('#open-photo')?.addEventListener('click', () => dialog?.showModal());
-    document.querySelector('.close-photo')?.addEventListener('click', () => dialog?.close());
-    dialog?.addEventListener('click', (event) => { if (event.target === dialog) dialog.close(); });
+    import '../scripts/gallery';
   </script>
 </body>
 </html>
