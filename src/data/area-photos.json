@@ -1,0 +1,82 @@
+{
+  "brevard": {
+    "url": "/area/brevard.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Downtown_Brevard_North_Carolina.jpg",
+    "author": "Gmgmarshall",
+    "license": "Public domain (author dedication)",
+    "licenseUrl": "https://commons.wikimedia.org/wiki/File:Downtown_Brevard_North_Carolina.jpg",
+    "alt": "Brevard, NC downtown",
+    "note": "Downtown Brevard, archival photo (2006). Resized; cropped in layout.",
+    "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/1/15/Downtown_Brevard_North_Carolina.jpg"
+  },
+  "table-rock": {
+    "url": "/area/table-rock.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:TableRockMountain.jpg",
+    "author": "Clemson3564",
+    "license": "CC BY 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+    "alt": "Table Rock State Park, SC",
+    "note": "Resized; cropped in layout.",
+    "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/b/bb/TableRockMountain.jpg"
+  },
+  "greenville": {
+    "url": "/area/greenville.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Falls_Park_Greenville_2017.jpg",
+    "author": "Antony-22",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "alt": "Greenville, SC \u2014 Falls Park",
+    "note": "Resized; cropped in layout.",
+    "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/a/a2/Falls_Park_Greenville_2017.jpg"
+  },
+  "french-broad": {
+    "url": "/area/french-broad.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:French_Broad_River.jpg",
+    "author": "Addicted2Karaoke",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "alt": "French Broad River",
+    "note": "Resized; cropped in layout.",
+    "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/6/65/French_Broad_River.jpg"
+  },
+  "pisgah": {
+    "url": "/area/pisgah.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Looking_Glass_Rock.jpg",
+    "author": "bradploeger",
+    "license": "CC BY-SA 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0/",
+    "alt": "Looking Glass Rock in Pisgah National Forest",
+    "note": "Resized; cropped in layout.",
+    "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/b/b2/Looking_Glass_Rock.jpg"
+  },
+  "caesars-head": {
+    "url": "/area/caesars-head.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Fall_colors_at_Mountain_Bridge_Wilderness_Area.jpg",
+    "author": "-ted",
+    "license": "CC BY 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.0/",
+    "alt": "Fall colors at Mountain Bridge Wilderness Area, Caesars Head State Park",
+    "note": "Resized; cropped in layout.",
+    "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/3/37/Fall_colors_at_Mountain_Bridge_Wilderness_Area.jpg"
+  },
+  "asheville": {
+    "url": "/area/asheville.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Asheville_at_dusk.jpg",
+    "author": "Michael Tracey",
+    "license": "CC0 1.0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "alt": "Downtown Asheville at dusk",
+    "note": "Resized; cropped in layout.",
+    "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/0/0e/Asheville_at_dusk.jpg"
+  },
+  "lakes": {
+    "url": "/area/lakes.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Jocassee.jpg",
+    "author": "Mwanner",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+    "alt": "Lake Jocassee, South Carolina",
+    "note": "Photo shows Lake Jocassee. Resized; cropped in layout.",
+    "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/d/dd/Jocassee.jpg"
+  }
+}
