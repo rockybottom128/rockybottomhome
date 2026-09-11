@@ -1,50 +1,52 @@
 ---
-import BaseHead from '../components/BaseHead.astro';
-import Header from '../components/Header.astro';
-import Footer from '../components/Footer.astro';
-import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
+import '../styles/home.css';
+const photo = 'https://images.unsplash.com/photo-1771680968896-cfd9b8f7244e?auto=format&fit=crop&w=2200&q=85';
+const map = 'https://www.google.com/maps/search/?api=1&query=128+Rocky+Bottom+Rd+Sunset+SC';
 ---
-
 <!doctype html>
 <html lang="en">
-	<head>
-		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
-	</head>
-	<body>
-		<Header />
-		<main>
-			<h1>🧑‍🚀 Hello, Astronaut!</h1>
-			<p>
-				Welcome to the official <a href="https://astro.build/">Astro</a> blog starter template. This
-				template serves as a lightweight, minimally-styled starting point for anyone looking to build
-				a personal website, blog, or portfolio with Astro.
-			</p>
-			<p>
-				This template comes with a few integrations already configured in your
-				<code>astro.config.mjs</code> file. You can customize your setup with
-				<a href="https://astro.build/integrations">Astro Integrations</a> to add tools like Tailwind,
-				React, or Vue to your project.
-			</p>
-			<p>Here are a few ideas on how to get started with the template:</p>
-			<ul>
-				<li>Edit this page in <code>src/pages/index.astro</code></li>
-				<li>Edit the site header items in <code>src/components/Header.astro</code></li>
-				<li>Add your name to the footer in <code>src/components/Footer.astro</code></li>
-				<li>Check out the included blog posts in <code>src/content/blog/</code></li>
-				<li>Customize the blog post page layout in <code>src/layouts/BlogPost.astro</code></li>
-			</ul>
-			<p>
-				Have fun! If you get stuck, remember to <a href="https://docs.astro.build/"
-					>read the docs
-				</a> or <a href="https://astro.build/chat">join us on Discord</a> to ask questions.
-			</p>
-			<p>
-				Looking for a blog template with a bit more personality? Check out <a
-					href="https://github.com/Charca/astro-blog-template"
-					>astro-blog-template
-				</a> by <a href="https://twitter.com/Charca">Maxi Ferreira</a>.
-			</p>
-		</main>
-		<Footer />
-	</body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rocky Bottom Home | For Sale by Owner · Sunset, SC</title>
+  <meta name="description" content="Explore a small, modern, new construction mountain home at 128 Rocky Bottom Road in Sunset, South Carolina. For sale by owner." />
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="canonical" href="https://rockybottomhome.com/" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="demo-banner">DESIGN PREVIEW <span>Sample photography. Property details and owner contact to come.</span></div>
+  <header>
+    <a class="brand" href="#" aria-label="Rocky Bottom Home, back to top"><span class="brand-mark" aria-hidden="true">R<span>·</span>B</span><span>ROCKY BOTTOM<small>A HOME IN THE MOUNTAINS</small></span></a>
+    <nav aria-label="Main navigation"><a href="#home">The home</a><a href="#photos">Photos</a><a href="#location">The setting</a></nav>
+    <a class="button button-small" href="#contact">Contact the owner <span aria-hidden="true">↗</span></a>
+  </header>
+  <main id="main">
+    <section class="hero" aria-labelledby="headline">
+      <div class="hero-copy"><p class="eyebrow">SUNSET, SOUTH CAROLINA · FOR SALE BY OWNER</p><h1 id="headline">A little modern.<br />A lot of <em>mountain.</em></h1><p class="hero-description">A new home. A small mountain neighborhood.<br class="desktop" /> Your own place in Rocky Bottom.</p><a class="button button-light" href="#home">Explore the home <span aria-hidden="true">↓</span></a><div class="hero-address">128 Rocky Bottom Road<span>Sunset, SC</span></div></div>
+      <figure class="hero-photo"><img src={photo} alt="Sample inspiration photo of a modern home with a deck in snowy woods; not the property for sale" fetchpriority="high" width="1600" height="1200" /><figcaption>INSPIRATION PHOTO — NOT THE PROPERTY FOR SALE</figcaption><span class="photo-number" aria-hidden="true">01 / THE POSSIBILITIES</span></figure>
+    </section>
+    <div class="feature-strip" aria-label="Home highlights"><span>New construction</span><span>Modern design</span><span>Mountain setting</span><span>Off scenic Highway 178</span></div>
+    <section class="home-section section" id="home">
+      <div><p class="eyebrow">SMALL FOOTPRINT. FRESH START.</p><h2>Make yourself<br />at home in<br /><em>Rocky Bottom.</em></h2></div>
+      <div class="home-details"><p class="lead">A small, modern, newly built mountain home at 128 Rocky Bottom Road.</p><p>Set in a tiny neighborhood off Highway 178, this home brings a modern point of view to a place known for its rocks, black bears, and scenic mountain drive.</p><p>Rocky Bottom Creek runs through the neighborhood, adding to the character of this corner of Sunset, South Carolina.</p><dl class="facts"><div><dt>Asking price</dt><dd>Coming soon</dd></div><div><dt>Beds & baths</dt><dd>To be confirmed</dd></div><div><dt>Interior size</dt><dd>To be confirmed</dd></div><div><dt>Lot size</dt><dd>To be confirmed</dd></div></dl></div>
+    </section>
+    <section class="gallery-section section" id="photos">
+      <div class="section-heading"><div><p class="eyebrow">PICTURE THE POSSIBILITIES</p><h2>A closer look.</h2></div><p>Property photography is coming soon.<br />This sample shows the gallery layout.</p></div>
+      <button class="gallery-image" id="open-photo" aria-label="Enlarge sample inspiration photograph"><img src={photo} alt="Sample modern woodland home, not 128 Rocky Bottom Road" loading="lazy" width="1800" height="1000" /><span class="gallery-caption">Sample inspiration photo <span>View larger ↗</span></span></button>
+      <p class="photo-credit">Sample photograph by <a href="https://unsplash.com/photos/modern-house-with-wooden-deck-in-snowy-landscape-Wd8Nm8iXglQ" target="_blank" rel="noreferrer">Clay Banks / Unsplash</a>. Not a photograph of this home or its location.</p>
+    </section>
+    <section class="location-section section" id="location"><div class="location-title"><p class="eyebrow">THE ROAD HOME</p><div class="road-number" aria-label="Highway 178"><span>SOUTH CAROLINA</span>178</div><h2>The drive is<br />part of the <em>draw.</em></h2></div><div class="location-copy"><p class="lead">Between Pickens, South Carolina,<br />and Rosman, North Carolina.</p><p>Highway 178 winds through the mountains, connecting small communities along a scenic drive. Just off that road is Rocky Bottom: a tiny neighborhood with a creek and a character all its own.</p><div class="location-address"><span>FIND THE HOME</span><strong>128 Rocky Bottom Road</strong><p>Sunset, South Carolina</p><a class="text-link" href={map} target="_blank" rel="noreferrer">Open location in Google Maps ↗</a></div></div></section>
+    <section class="contact-section section" id="contact"><p class="eyebrow">FOR SALE BY OWNER</p><h2>Could this be<br /><em>your next chapter?</em></h2><p>Get in touch with the owner to learn more or arrange a visit.</p><div class="contact-pending">Owner contact details coming soon.</div><p class="contact-note">This is a design preview. Tour requests are not yet available.</p></section>
+  </main>
+  <footer><a class="footer-brand" href="#">ROCKY BOTTOM HOME</a><span>128 Rocky Bottom Road · Sunset, SC</span><a href="#">Back to top ↑</a></footer>
+  <dialog id="photo-dialog" aria-label="Sample inspiration photograph"><button class="close-photo" autofocus>Close ×</button><img src={photo} alt="Enlarged sample modern woodland home; not the property for sale" /><p>Sample inspiration photograph — not the property for sale.</p></dialog>
+  <script>
+    const dialog = document.querySelector<HTMLDialogElement>('#photo-dialog');
+    document.querySelector('#open-photo')?.addEventListener('click', () => dialog?.showModal());
+    document.querySelector('.close-photo')?.addEventListener('click', () => dialog?.close());
+    dialog?.addEventListener('click', (event) => { if (event.target === dialog) dialog.close(); });
+  </script>
+</body>
 </html>
