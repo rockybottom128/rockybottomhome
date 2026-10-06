@@ -200,3 +200,7 @@ dist
 
 ### Astro ###
 .astro/
+
+### Development access helper ###
+__pycache__/
+*.pyc
