@@ -4,11 +4,11 @@ Repository: https://github.com/rockybottom128/rockybottomhome. Production: https
 
 ## Setup
 
-Read [Windows setup](windows-setup.md) for Karen's local machine, and [AGENTS.md](../AGENTS.md) for contributor instructions. GitHub clones include the instructions automatically. Use individual GitHub accounts with ordinary repository write access; never share the owner's credentials. Shared ChatGPT materials do not synchronize repository files or grant GitHub access.
+Read [Linux development access](linux-development-access.md) for Scott and Karen's laptop setup, [Windows setup](windows-setup.md) for Windows contributor machines, and [AGENTS.md](../AGENTS.md) for contributor instructions. GitHub clones include the instructions automatically. Each Linux account uses its own development App credentials and checkout. The owner's GitHub login belongs in a separate production-approval session. Shared ChatGPT materials do not synchronize repository files or grant GitHub access.
 
 ## Local editing
 
-Clone into a `website` subfolder, open that repository as the local project's primary folder, install with `npm ci`, and start `npm run dev -- --host 127.0.0.1 --port 4321`. Use native Windows PowerShell and `.cmd` command suffixes if needed. Create a task branch from current `origin/main`, collect changes locally, and wait for explicit approval of a batch before pushing.
+Clone into a `website` subfolder, open that repository as the local project's primary folder, install with `npm ci`, and start `npm run dev -- --host 127.0.0.1 --port 4321`. Use native Windows PowerShell and `.cmd` command suffixes if needed. Create a task branch from current `origin/main`, collect changes locally, and wait for explicit approval of a batch before pushing. If another local preview already uses that port, use another available port and report the actual URL; do not stop the other user's server.
 
 ## Cloudflare routing
 
@@ -28,4 +28,6 @@ The development preview path was verified separately from production during setu
 
 The owner reviews the exact proposed batch and separately authorizes its merge into main. Cloudflare then updates production. Verify its successful build and website before reporting completion.
 
-Main requires a review and code-owner review, dismisses stale approvals, and has an active Production updates by owner ruleset restricting updates to repository administrators. CODEOWNERS names `rockybottom128` for all files. Keep contributors at ordinary write access. Owner-authored setup changes cannot be self-approved; a permitted administrator override can be used only for a separately authorized owner task, never for contributor publishing. Do not weaken or remove protections to make a merge work.
+Main requires a review and code-owner review and dismisses stale approvals. The Production updates by owner ruleset restricts main updates to administrators through pull requests. The Production requires reviewed workflow ruleset requires a pull request, a successful Cloudflare build on up-to-date code, and resolved review conversations; it also blocks deletion and force pushes and has no bypass actors. CODEOWNERS names `rockybottom128` for all files.
+
+Scott's and Karen's development Apps have contents/pull-request write access and checks/statuses read access, but no administration permissions and no production-rule bypass. The App identity is separate from the owner, so `rockybottom128` can review and approve proposals submitted through either App. The owner's credentials must not remain in the everyday development accounts after the App setup is verified. Owner-authored historical setup PRs are a different case: GitHub does not allow self-approval. Any owner exception to the classic review rule is a separate explicitly authorized action; the pull-request and build rules still apply. Do not weaken protections to make a merge work.
