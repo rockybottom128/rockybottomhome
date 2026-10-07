@@ -17,6 +17,10 @@ account = pwd.getpwnam(args.user)
 if os.geteuid() not in (0, account.pw_uid):
     sys.exit('Run under the target user, or use sudo for installation into the other user account.')
 home = Path(account.pw_dir)
+if args.user == 'karen':
+    filesystem = subprocess.run(['findmnt', '-n', '-o', 'FSTYPE', '-T', str(home)], capture_output=True, text=True, check=True).stdout.strip()
+    if filesystem != 'ecryptfs':
+        sys.exit('Karen must first sign into Linux to unlock her encrypted home. No installation changes were made.')
 os.umask(0o077)
 source = args.credentials.resolve()
 cfg = json.loads((source/'app.json').read_text())

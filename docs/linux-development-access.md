@@ -32,6 +32,8 @@ An owner first registers and installs each App using the one-time local registra
 
 The per-user installer copies the matching App profile, helper, and launcher into that user's home. It refuses mismatched profiles and existing different files. Karen receives her own copy of the already-verified Node 24 distribution rather than depending on Scott's home. Do not copy Scott's personal GitHub CLI credentials or browser profile to Karen.
 
+Karen's home on this laptop is encrypted with eCryptfs. She must log into her Linux desktop with her password before installation; `findmnt -T /home/karen -o TARGET,FSTYPE` must show `/home/karen` and `ecryptfs`. Keep her logged in if Scott performs the installation from another session. Running commands through `sudo -u karen` does not necessarily unlock her home. Do not change a locked home folder's permissions to make installation proceed: that can put files beneath the encrypted mount, where they disappear from view after login. The installer stops unless the encrypted home is mounted.
+
 After installation, restart the desktop app or refresh its command path. Confirm access with:
 
 ```sh
@@ -39,6 +41,8 @@ rockybottom-auth verify
 gh auth status
 gh api repos/rockybottom128/rockybottomhome --jq .full_name
 ```
+
+Run these checks in a newly opened Terminal in the actual user's desktop, not only inside the installer. On this laptop, Karen's approved commit identity is `Karen <328162498+kashleyh@users.noreply.github.com>`.
 
 The `gh` launcher uses the system GitHub CLI with a freshly supplied App token. GitHub App installation tokens do not represent a human user, so `gh api user` is not an authentication test for this setup. Some CLI operations that assume a human viewer may need their REST equivalent through `gh api`.
 
