@@ -12,25 +12,26 @@
 		"publish": true
 	},
 	"dependencies": {
-		"@astrojs/cloudflare": "12.6.12",
-		"@astrojs/mdx": "4.3.13",
-		"@astrojs/rss": "4.0.14",
+		"@astrojs/cloudflare": "14.3.4",
+		"@astrojs/mdx": "8.0.3",
+		"@astrojs/rss": "4.0.19",
 		"@astrojs/sitemap": "3.6.1",
-		"astro": "5.16.9",
+		"astro": "7.3.8",
 		"typescript": "5.9.3"
 	},
 	"devDependencies": {
-		"wrangler": "4.127.0"
+		"wrangler": "4.149.0"
 	},
 	"engines": {
-		"node": ">=22"
+		"node": ">=22.12.0"
 	},
 	"private": true,
 	"scripts": {
 		"astro": "astro",
 		"build": "astro build",
+		"test:security": "node --test tests/security.test.mjs",
 		"cf-typegen": "wrangler types",
-		"check": "astro build && tsc && wrangler deploy --dry-run",
+		"check": "astro build && tsc && npm run test:security && wrangler deploy --dry-run",
 		"deploy": "wrangler deploy",
 		"dev": "astro dev",
 		"preview": "astro build && wrangler dev"

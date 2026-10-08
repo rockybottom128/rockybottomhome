@@ -3,7 +3,7 @@
 ## Project and scope
 - Repository: https://github.com/rockybottom128/rockybottomhome
 - Website repository lives in the `website` subfolder of the broader RockyBottomHome project. Run Git, npm, and build commands from this repository root. Keep unrelated project documents and source photos outside it; copy only approved website assets into `public`.
-- This is an existing Astro 5 website on Cloudflare Workers Builds, not Cloudflare Pages or a Sites-managed project. Preserve its architecture, dependency lockfile, and deployment configuration.
+- This is an existing Astro 7 website on Cloudflare Workers Builds, not Cloudflare Pages or a Sites-managed project. Preserve its architecture, dependency lockfile, and deployment configuration.
 - Production: https://rockybottomhome.com and https://rockybottomhome.accts-e61.workers.dev. Both are production destinations.
 - The owner is GitHub account `rockybottom128`. Contributors use their own authorized GitHub account, never the owner's credentials.
 
@@ -35,7 +35,7 @@
 - GitHub protections, not this file alone, enforce access. Do not change repository rules, collaborator roles, or credentials to bypass them.
 
 ## Validation
-- Before a batch push: `npm run build`, `npx tsc --noEmit`, and `git diff --check` (use .cmd suffixes on Windows if needed). Inspect the diff and ensure no secrets, build output, node_modules, unrelated documents, or unapproved property information are staged.
+- Before a batch push: `npm run build`, `npx tsc --noEmit`, `npm run test:security`, and `git diff --check` (use .cmd suffixes on Windows if needed). Inspect the diff and ensure no secrets, build output, node_modules, unrelated documents, or unapproved property information are staged.
 - Test changed interactions on desktop and mobile when browser access permits: both galleries, synchronized arrows/thumbnails, swipe and keyboard navigation, enlarged photo dialog, and collapsible details/area explorer.
 - Check readable text, image loading/credits, small-screen overflow, and the area explorer's spacing above the contact section. Preserve fixed row gaps; percentage row gaps previously caused content to spill onto the next section.
 - If browser inspection is blocked by security policy, report the limitation without bypassing it or claiming visual verification. The user can review the local preview in their normal browser.
