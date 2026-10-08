@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "version": "0.1.0.0",
+  "stage": "prelaunch",
+  "base": {
+    "commit": "9f7bd67b625f2aa3ba41ad0624ffe850be5bcb62",
+    "version": "0.0.0.0",
+    "stage": "prelaunch"
+  },
+  "change": {
+    "level": "feature",
+    "reason": "Add persistent automated site versioning and visible release identification"
+  }
+}

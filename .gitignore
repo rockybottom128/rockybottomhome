@@ -200,3 +200,4 @@ dist
 
 ### Astro ###
 .astro/
+src/generated/build-info.json

@@ -4,6 +4,7 @@ import mdx from "@astrojs/mdx";
 import sitemap from "@astrojs/sitemap";
 
 import cloudflare from "@astrojs/cloudflare";
+import versionIntegration from "./scripts/version-integration.mjs";
 
 // https://astro.build/config
 export default defineConfig({
@@ -12,7 +13,7 @@ export default defineConfig({
 	compressHTML: true,
 	// This public demo has no sessions; do not provision a KV namespace on deploy.
 	session: false,
-	integrations: [mdx(), sitemap()],
+	integrations: [versionIntegration(), mdx(), sitemap()],
 	adapter: cloudflare({
 		imageService: "compile",
 	}),

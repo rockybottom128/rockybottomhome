@@ -1,0 +1,23 @@
+---
+import build from '../generated/build-info.json';
+---
+<div id="site-version" class="site-version" data-site-version={build.version}>
+  {build.versionOnly ? <span>{build.version}</span> : (
+    <details>
+      <summary>{build.label}</summary>
+      <dl>
+        <div><dt>Branch</dt><dd>{build.branch}</dd></div>
+        <div><dt>Commit</dt><dd>{build.commit}</dd></div>
+        {build.dirty && <div><dt>Working copy</dt><dd>Contains uncommitted changes</dd></div>}
+      </dl>
+    </details>
+  )}
+</div>
+<style>
+  .site-version { flex-basis: 100%; text-align: center; font-size: 12px; color: #516058; line-height: 1.6; overflow-wrap: anywhere; }
+  summary { cursor: pointer; width: fit-content; max-width: 100%; margin: 0 auto; }
+  summary:focus-visible { outline: 2px solid #536848; outline-offset: 4px; }
+  dl { margin: 12px auto 0; max-width: 560px; padding: 12px; border: 1px solid var(--line); text-align: left; }
+  dl div { display: grid; grid-template-columns: 90px minmax(0, 1fr); gap: 12px; }
+  dt { font-weight: 700; } dd { margin: 0; }
+</style>

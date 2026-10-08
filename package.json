@@ -31,10 +31,13 @@
 		"build": "astro build",
 		"test:security": "node --test tests/security.test.mjs",
 		"cf-typegen": "wrangler types",
-		"check": "astro build && tsc && npm run test:security && wrangler deploy --dry-run",
+		"check": "astro build && tsc && npm run test:security && npm run test:version && wrangler deploy --dry-run",
 		"deploy": "wrangler deploy",
 		"dev": "astro dev",
-		"preview": "astro build && wrangler dev"
+		"preview": "astro build && wrangler dev",
+		"version:prepare": "node scripts/versioning.mjs prepare",
+		"version:check": "node scripts/versioning.mjs check",
+		"test:version": "node --test tests/versioning.test.mjs"
 	},
 	"type": "module"
 }

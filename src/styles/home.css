@@ -12,3 +12,6 @@
 
 /* Fixed row spacing prevents percentage grid gaps from overflowing into contact. */
 .location-section{row-gap:48px;column-gap:9%}.area-explorer,.area-content,.area-slides,.area-thumbnail-navigation,.area-thumbnails{min-width:0}.area-content{padding-bottom:24px}.area-visit-note{font-size:14px;line-height:1.6;color:var(--ink)}.area-group-label{display:block;min-height:30px;font-size:12px;line-height:1.4;font-weight:700;color:var(--forest);padding:3px 2px 9px;white-space:nowrap}.area-group-start:not(:first-child){margin-left:24px}.area-thumbnail{align-self:stretch}.area-thumbnail-navigation{align-items:center}@media(max-width:950px){.location-section{row-gap:36px;column-gap:7%}}@media(max-width:680px){.location-section{row-gap:30px}.area-group-start:not(:first-child){margin-left:12px}}
+
+/* Keep build identification on its own footer row. */
+footer { flex-wrap: wrap; row-gap: 14px; }
