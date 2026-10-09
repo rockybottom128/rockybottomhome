@@ -1,0 +1,9 @@
+---
+import ViewingLayout from '../../layouts/ViewingLayout.astro';
+---
+<ViewingLayout title="My bookings · sample">
+<section class="intro"><p class="eyebrow">MY BOOKINGS</p><h1>Your visits,<br /><em>all together.</em></h1><p>Return here from your confirmation email or the My bookings link. Sign in with a fresh eight-digit email code whenever your session expires.</p></section>
+<section id="visitor-signin-needed" class="card"><h2>Sign in to your bookings</h2><p>Use the same verified email. No visitor password is required.</p><a class="button" href="/viewings/?next=bookings">Send a sample sign-in code →</a></section>
+<div id="visitor-bookings" hidden><div class="actions"><a class="button secondary" href="/viewings">Request another viewing</a><button class="text-button" id="visitor-signout" type="button">Sign out</button></div><div class="two-col"><section class="card"><h2>Choose a viewing.</h2><p>Select the date and time you want to manage or provide feedback for.</p><div id="visitor-booking-list"></div></section><section class="card"><h2 id="booking-title">Select a booking</h2><p id="booking-state"></p><p id="booking-next"></p><button class="button secondary" id="cancel-selected" type="button" hidden>Cancel this sample viewing</button><p id="followup-wait"></p><section id="followup-section" hidden><h3>Stay in touch.</h3><label for="sample-message">Questions or feedback for this viewing</label><textarea id="sample-message" readonly>I enjoyed seeing the home. Could we arrange another viewing?</textarea><button class="button" id="sample-send" type="button">Add sample feedback</button><ul id="booking-feedback"></ul></section><p id="visitor-booking-result" role="status"></p></section></div></div>
+<script>import '../../scripts/visitor-bookings';</script>
+</ViewingLayout>
