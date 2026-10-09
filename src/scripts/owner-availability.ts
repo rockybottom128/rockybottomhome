@@ -1,0 +1,33 @@
+import { timeLabel, timeRange, dayKey, monthDays, ruleBlocks, cancellationAllowed, type BlockRule } from '../lib/viewings/calendar';
+import { readSample, saveSample, TIMES, blocked, label, el, drawCalendar, makeButton, type SampleState, type SampleBooking } from './viewing-sample-store';
+let day=dayKey(),month=day.slice(0,7);
+let pending: {apply:(s:SampleState)=>void; affects:(b:SampleBooking)=>boolean}|null=null;
+const dialog=el<HTMLDialogElement>('cancel-warning');
+function act(apply:(s:SampleState)=>void,affects:(b:SampleBooking)=>boolean) {
+ const state=readSample(),affected=state.bookings.filter(b=>['approved','requested'].includes(b.status)&&affects(b));
+ if(affected.length){pending={apply,affects};el('affected-bookings').textContent=affected.map(b=>`${label(b.day,b.time)} (${b.status})`).join('; ');el<HTMLTextAreaElement>('cancellation-reason').value='';el<HTMLInputElement>('notify-visitors').checked=false;dialog.showModal();return;}
+ apply(state);saveSample(state);render();
+}
+function render(){const state=readSample();el<HTMLInputElement>('owner-month').value=month;
+ drawCalendar(el('owner-calendar'),monthDays(month),day,d=>{day=d;month=d.slice(0,7);render();},()=>false);
+ el('owner-selected-day').textContent=label(day);const whole=state.blockedDays.includes(day);el('day-state').textContent=whole?'Entire day blocked':'Day open, subject to individual and default blocks';el('toggle-day').textContent=whole?'Unblock entire day':'Block entire day';
+ const tiles=el('owner-slots');tiles.replaceChildren();for(const t of TIMES){const isBlocked=blocked(state,day,t.start,t.end);const b=makeButton(`${timeRange(t.start,t.end)} · ${isBlocked?'Unblock':'Block'}`,()=>{
+  const selectedDay=day,key=day+' '+t.start;
+  act(s=>{if(isBlocked){s.blockedSlots=s.blockedSlots.filter(k=>k!==key);if(!s.openSlots.includes(key))s.openSlots.push(key);}else{s.blockedSlots.push(key);s.openSlots=s.openSlots.filter(k=>k!==key);}},b=>!isBlocked&&b.day===selectedDay&&b.time===t.start);
+ });b.disabled=whole;b.setAttribute('aria-pressed',String(isBlocked));tiles.appendChild(b);}
+ const list=el('day-bookings');list.replaceChildren();const matches=state.bookings.filter(b=>b.day===day);if(!matches.length)list.textContent='No sample bookings for this day.';
+ for(const b of matches){const row=document.createElement('article');row.className='booking-row';const p=document.createElement('p');p.textContent=`${timeRange(b.time,b.end)} · ${b.mode==='agent_private'?'Agent private':'Owner-coordinated'} · ${b.status} · ${b.access==='ready'?'sample PIN ready':b.access==='pending'?'access setup pending':'no active access'}`;row.appendChild(p);
+ if(b.status==='requested')row.appendChild(makeButton('Approve sample booking',()=>{const s=readSample(),record=s.bookings.find(x=>x.id===b.id)!;record.status='approved';record.access=record.mode==='agent_private'?'pending':'none';s.notices.push(`visitor@example.com · Viewing approved: ${label(record.day,record.time)}. ${record.mode==='agent_private'?'Access setup pending.':'Owner-coordinated; no PIN.'}`);saveSample(s);render();},'button secondary'));
+ if(b.status==='approved'&&b.access==='pending')row.appendChild(makeButton('Simulate PIN installed + email ready',()=>{const s=readSample(),record=s.bookings.find(x=>x.id===b.id)!;record.access='ready';s.notices.push(`visitor@example.com · Sample timed access ready for ${label(record.day,record.time)}–${timeLabel(record.end)}. No real PIN or email created.`);saveSample(s);render();},'button secondary'));list.appendChild(row);}
+ const rules=el('rule-list');rules.replaceChildren();for(const r of state.rules){const li=document.createElement('li');li.textContent=`${r.weekday===-1?'Every day':['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][r.weekday]} ${timeRange(r.start,r.end)} `;li.appendChild(makeButton('Remove range',()=>{const s=readSample();s.rules=s.rules.filter(x=>x.id!==r.id);saveSample(s);render();},'text-button'));rules.appendChild(li);}
+ const notices=el('notice-list');notices.replaceChildren();for(const n of state.notices){const li=document.createElement('li');li.textContent=n;notices.appendChild(li);}if(!state.notices.length)notices.textContent='No sample notifications yet.';
+}
+el('toggle-day').addEventListener('click',()=>{const selectedDay=day,isBlocked=readSample().blockedDays.includes(day);act(s=>{s.blockedDays=isBlocked?s.blockedDays.filter(d=>d!==selectedDay):[...s.blockedDays,selectedDay];},b=>!isBlocked&&b.day===selectedDay);});
+function move(delta:number){const d=new Date(month+'-01T12:00:00Z');d.setUTCMonth(d.getUTCMonth()+delta);month=d.toISOString().slice(0,7);day=month+'-01';render();}
+el('previous-month').addEventListener('click',()=>move(-1));el('next-month').addEventListener('click',()=>move(1));el('today-month').addEventListener('click',()=>{day=dayKey();month=day.slice(0,7);render();});el('owner-month').addEventListener('change',()=>{const value=el<HTMLInputElement>('owner-month').value;if(/^\d{4}-\d{2}$/.test(value)){month=value;day=month+'-01';render();}});
+el('rule-form').addEventListener('submit',e=>{e.preventDefault();const start=(document.getElementById('rule-start') as unknown as HTMLSelectElement).value,end=(document.getElementById('rule-end') as unknown as HTMLSelectElement).value;if(start>=end){el('rule-error').textContent='End must be after start. Split overnight blocks into two ranges.';return;}el('rule-error').textContent='';const r:BlockRule={id:crypto.randomUUID(),weekday:Number((document.getElementById('rule-weekday') as unknown as HTMLSelectElement).value),start,end};act(s=>{s.rules.push(r);},b=>!readSample().openSlots.includes(b.day+' '+b.time)&&ruleBlocks(b.day,b.time,b.end,[r]));});
+el('keep-bookings').addEventListener('click',()=>{pending=null;dialog.close();});dialog.addEventListener('cancel',()=>{pending=null;});
+el('cancel-warning-form').addEventListener('submit',e=>{e.preventDefault();if(!pending)return;const state=readSample(),affected=state.bookings.filter(b=>['requested','approved'].includes(b.status)&&pending!.affects(b));const reason=el<HTMLTextAreaElement>('cancellation-reason').value.trim();if(!cancellationAllowed(affected.length,reason,el<HTMLInputElement>('notify-visitors').checked))return;
+ for(const b of affected){b.status='canceled';b.revision++;b.reason=reason;b.access=b.access==='none'?'none':'revoked';state.notices.push(`To visitor@example.com · Canceled ${label(b.day,b.time)}. Reason: ${reason}. Please choose another time. Sample only; live PIN revocation must be confirmed.`);}
+ pending.apply(state);saveSample(state);pending=null;dialog.close();render();el('availability-result').textContent=`${affected.length} sample booking(s) canceled. Notification drafts saved; no real email sent.`;
+});render();

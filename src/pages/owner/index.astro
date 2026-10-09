@@ -1,0 +1,7 @@
+---
+import ViewingLayout from '../../layouts/ViewingLayout.astro';
+---
+<ViewingLayout title="Owner sign in">
+  <section class="intro"><p class="eyebrow">OWNER AREA</p><h1>Every visit.<br /><em>One place.</em></h1><p>Manage viewing requests, availability, and conversations.</p></section>
+  <section class="card login-card"><h2>Owner sign in</h2><p>Password-based owner accounts are planned. Live sign-in is not connected yet.</p><fieldset disabled><legend>Sign-in preview · do not enter credentials</legend><label for="owner-email">Email</label><input id="owner-email" type="email" placeholder="Your owner email" autocomplete="off" /><label for="owner-password">Password</label><input id="owner-password" type="password" placeholder="Your password" autocomplete="off" /><button class="button" type="button">Sign in</button><button class="text-button" type="button">Reset password</button></fieldset><p class="hint">Owners will have equal permissions. Invitations, password reset, and immediate session revocation will be required before launch.</p><a class="button secondary" href="/owner/demo">Explore the sample dashboard →</a><p class="hint">The sample dashboard is public and contains fictional records only. It is not a private owner account.</p></section>
+</ViewingLayout>

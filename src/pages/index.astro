@@ -22,12 +22,14 @@ const gallery = [
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
+  <div class="site-top" id="site-top">
   <div class="demo-banner">DESIGN PREVIEW <span>Sample photography. Property details and owner contact to come.</span></div>
   <header>
     <a class="brand" href="#" aria-label="Rocky Bottom Home, back to top"><span class="brand-mark" aria-hidden="true">R<span>·</span>B</span><span>ROCKY BOTTOM<small>A HOME IN THE MOUNTAINS</small></span></a>
     <nav aria-label="Main navigation"><a href="#home">The home</a><a href="#photos">Photos</a><a href="#location">The setting</a></nav>
-    <a class="button button-small" href="#contact">Contact the owner <span aria-hidden="true">↗</span></a>
+    <a class="button button-small" href="/viewings/">Viewings &amp; bookings <span aria-hidden="true">↗</span></a>
   </header>
+  </div>
   <main id="main">
     <section class="hero" aria-labelledby="headline">
       <div class="hero-copy"><p class="eyebrow">SUNSET, SOUTH CAROLINA · FOR SALE BY OWNER</p><h1 id="headline">A little modern.<br />A lot of <em>mountain.</em></h1><p class="hero-description">A new home. A small mountain neighborhood.<br class="desktop" /> Your own place in Rocky Bottom.</p><a class="button button-light" href="#home">Explore the home <span aria-hidden="true">↓</span></a><div class="hero-address">Rocky Bottom<span>Sunset, SC</span></div></div>
@@ -91,12 +93,13 @@ const gallery = [
       <p class="photo-credit">Sample photograph by <a href="https://unsplash.com/photos/modern-house-with-wooden-deck-in-snowy-landscape-Wd8Nm8iXglQ" target="_blank" rel="noreferrer">Clay Banks / Unsplash</a>. Three demo views of the same sample image; not this home or its location.</p>
     </section>
     <section class="location-section section" id="location"><div class="location-title"><p class="eyebrow">THE ROAD HOME</p><div class="road-number" aria-label="Highway 178"><span>SOUTH CAROLINA</span>178</div><h2>The drive is<br />part of the <em>draw.</em></h2></div><div class="location-copy"><p class="lead">Between Pickens, South Carolina,<br />and Brevard, North Carolina.</p><p>Highway 178 winds through the mountains, connecting small communities along a scenic drive. Along that route is Rocky Bottom: a historic tiny neighborhood with a mountain creek, wildlife, and a character all its own.</p><div class="location-address"><span>THE NEIGHBORHOOD</span><strong>Rocky Bottom - South Carolina</strong></div></div><AreaExplorer /></section>
-    <section class="contact-section section" id="contact"><p class="eyebrow">FOR SALE BY OWNER</p><h2>Could this be<br /><em>your next chapter?</em></h2><p>Get in touch with the owner to learn more or arrange a visit.</p><div class="contact-pending">Owner contact details coming soon.</div><p class="contact-note">This is a design preview. Tour requests are not yet available.</p></section>
+    <section class="contact-section section" id="contact"><p class="eyebrow">FOR SALE BY OWNER</p><h2>Could this be<br /><em>your next chapter?</em></h2><p>Get in touch with the owner to learn more or arrange a visit.</p><div class="contact-pending">Owner contact details coming soon.</div><p class="contact-note">This is a design preview. Tour requests are not yet available.</p><a class="button button-light" href="/viewings">Preview the viewing experience <span aria-hidden="true">↗</span></a></section>
   </main>
-  <footer><a class="footer-brand" href="#">ROCKY BOTTOM HOME</a><span>Rocky Bottom · Sunset, SC</span><a href="#">Back to top ↑</a><SiteVersion /></footer>
+  <footer><a class="footer-brand" href="#">ROCKY BOTTOM HOME</a><span>Rocky Bottom · Sunset, SC</span><a href="#">Back to top ↑</a><a href="/owner/">Owner login</a><SiteVersion /></footer>
   <dialog id="photo-dialog" aria-label="Enlarged home photo gallery"><button class="close-photo" autofocus>Close ×</button><div class="dialog-stage"><div class="dialog-image-crop"><img id="dialog-current" src={photo} alt="Sample modern woodland home, not the property for sale" draggable="false" /></div><button class="photo-arrow photo-prev" data-step="-1" aria-label="Previous photo">‹</button><button class="photo-arrow photo-next" data-step="1" aria-label="Next photo">›</button></div><p id="dialog-caption" aria-live="polite">Full exterior · sample — 1 / {gallery.length}</p></dialog>
   <script>
     import '../scripts/gallery';
+    import '../scripts/home-navigation';
   </script>
 </body>
 </html>
