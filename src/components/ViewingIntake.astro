@@ -2,7 +2,7 @@
 interface Props { source: 'public' | 'mls' }
 const { source } = Astro.props;
 ---
-<section class="intro"><p class="eyebrow">{source === 'mls' ? 'AGENT SHOWING REQUEST · MLS ENTRY' : 'COME EXPERIENCE ROCKY BOTTOM'}</p><h1>A little closer<br />to <em>feeling at home.</em></h1><p>Plan a visit, ask a question, and keep every detail in one place.</p></section>
+<section class="intro"><p class="eyebrow">{source === 'mls' ? 'AGENT SHOWING REQUEST · MLS ENTRY' : 'COME EXPERIENCE ROCKY BOTTOM'}</p><h1>A little closer<br />to <em>feeling at home.</em></h1><p>Plan a visit, ask a question, and keep every detail in one place.</p><a href="/viewings/status/">Already have a booking? View my bookings →</a></section>
 <div class="portal-grid" id="intake" data-source={source}>
   <aside class="card journey"><p class="eyebrow">YOUR VISIT, STEP BY STEP</p><ol><li>Verify your email with an eight-digit code</li><li>Confirm your identity or agent credentials</li><li>Select a day and time</li><li>Review and confirm your request</li></ol><p>Returning visitors sign in with a fresh email code. No visitor password is needed.</p><a href="/viewings/?next=bookings">Sign in to my bookings →</a><p class="hint">The MLS entry route is not proof of agent identity.</p></aside>
   <section class="card"><p class="eyebrow">EXPLORE THE BOOKING FLOW</p><h2 id="intake-title">Start with your email.</h2><p>This preview uses visitor@example.com only. Sample bookings and availability are stored in this browser. No email is sent.</p>

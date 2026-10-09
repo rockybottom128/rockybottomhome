@@ -15,3 +15,16 @@
 
 /* Keep build identification on its own footer row. */
 footer { flex-wrap: wrap; row-gap: 14px; }
+
+/* Keep navigation available and anchor targets below the full banner/header. */
+html{scroll-padding-top:calc(var(--site-top-height, 150px) + 12px)}
+.site-top{position:sticky;top:0;z-index:20;background:var(--paper);box-shadow:0 1px 0 var(--line)}
+.skip-link{z-index:30}
+@media(max-width:680px){
+  html{scroll-padding-top:calc(var(--site-top-height, 220px) + 12px)}
+  .site-top header{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;padding:12px 5%}
+  .site-top nav{grid-column:1/-1;width:auto;padding-top:10px}
+  .site-top .brand{gap:8px;font-size:12px}
+  .site-top .brand small{font-size:8px}
+  .site-top .button-small{max-width:150px;gap:8px;line-height:1.3}
+}
