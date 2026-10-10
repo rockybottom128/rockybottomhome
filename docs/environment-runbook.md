@@ -132,7 +132,7 @@ Visitor codes have eight digits, ten-minute expiry and five attempts. Current co
 
 The database-backed visitor-demo switch is initially off on fresh installation; its current value is owner-controlled and must not be reset by deployments. Off blocks visitor sending, verification and demo access while preserving owner login and existing records.
 
-Identity/agent checks, booking submission, calendar availability, conversation examples and lockbox actions remain simulations. Sample calendar data is browser-local, not shared D1 availability. Sending/receiving DNS verification does not change that scope. Retention cleanup, broader anti-abuse capacity, durable email delivery tracking and backup policy remain follow-up work.
+The 0.4.0.0 source candidate adds shared D1 availability with migration 0005; it has not been applied remotely by this batch. See [calendar availability](calendar-availability.md) for the migration review and release checks. Identity/agent checks, booking submission, conversation examples and lockbox actions remain simulations. Sending/receiving DNS verification does not change that scope. Retention cleanup, broader anti-abuse capacity, durable email delivery tracking and backup policy remain follow-up work.
 
 ## Recovery or new-project sequence
 
@@ -160,3 +160,11 @@ Identity/agent checks, booking submission, calendar availability, conversation e
 Static/content development commonly uses port 4321. The authenticated local Worker preview uses port 4324, local persisted D1, and the Linux user service `rockybottom-auth-preview`; restart it after rebuilding. Port 4322 was an older static preview and cannot substitute for the auth runtime. `npm run test:auth:isolated` uses disposable local D1/fake mail on port 4325.
 
 A machine-specific supervisor workspace has review scripts and a pre-push guard; these are not GitHub protections and are not automatically installed by cloning. Keep private operator instructions outside this public repository. Other contributors need GitHub access, not local Cloudflare or Resend credentials, for ordinary Git-triggered publishing.
+
+## Calendar migration 0005 — pending release preparation
+
+The candidate adds `calendar_state`, `calendar_periods`, and `calendar_audit`; it does not modify or seed owners, visitors, demo settings, bookings, or legacy scaffold tables. The explicit initial state is zero available times. Browser-local examples are never imported. Dev publication applies this migration through the existing guarded dev deploy command after authorization. The remote inventory above remains historical evidence, not a claim that 0005 is deployed.
+
+Before production promotion, separately review the SQL and [calendar policy](calendar-availability.md), capture a production D1 backup/recovery point with its timestamp and database identity, and verify restore access and a compatibility/rollback plan. No backup was taken or production migration performed during local implementation. Apply 0005 to production only as separately authorized preparation, before code requiring these tables. The migration is additive and old code can still run, but old code only shows fictional local availability; rolling code back leaves new settings/audit data intact and temporarily removes shared-calendar behavior. Do not drop the new tables or erase auth data to roll back.
+
+After authorized dev publication: with approved existing accounts, have Owner A save a period and Owner B reload on another browser/device; verify visitor slots, add/remove a block, then verify persistence through the next authorized deployment. Local automated tests use disposable D1 and fake mail only. Remote cross-device/deployment checks remain release verification, not something local tests prove.

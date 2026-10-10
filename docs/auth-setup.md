@@ -4,7 +4,9 @@ Current as of 2026-10-10: owner authentication and visitor email verification ar
 
 ## Implemented scope
 
-The public home remains static. Owner, visitor and API routes render on the Worker. D1 migrations 0001–0004 define application and authentication records. Better Auth 1.7.7 owns password hashing (its default scrypt), password recovery, sessions and auth rate limits through the Drizzle D1 adapter. Public owner registration and unused auth endpoints are not exposed. All owners have equal permissions; invitation-only accounts activate after password setup. Removing access invalidates sessions, and a database trigger protects the last active owner. Owner dashboard/demo/availability routes require a current active-owner session on every request. The new dashboard displays real D1 visitor verification records. Old calendar/demo actions remain explicitly fictional; bookings and access hardware are outside this batch.
+The calendar changes below describe the local **0.4.0.0 candidate**, including pending migration 0005. They are not a claim of remote deployment; the remote inventory remains at the last verified 0.3.1.0 release.
+
+The public home remains static. Owner, visitor and API routes render on the Worker. D1 migrations 0001–0005 define application, authentication and shared calendar records. Better Auth 1.7.7 owns password hashing (its default scrypt), password recovery, sessions and auth rate limits through the Drizzle D1 adapter. Public owner registration and unused auth endpoints are not exposed. All owners have equal permissions; invitation-only accounts activate after password setup. Removing access invalidates sessions, and a database trigger protects the last active owner. Owner dashboard/demo/availability routes require a current active-owner session on every request. The new dashboard displays real D1 visitor verification records. Owner availability uses shared D1 records and authenticated APIs; booking requests and access hardware remain simulated.
 
 Visitors supply an email before the server creates/reuses their opaque visitor ID. A cryptographic eight-digit code is sent, expires after ten minutes, permits five attempts and is stored as a keyed digest. Server-side email cooldown, IP limits and a global daily sending cap apply. Requesting a new code replaces the previous challenge. Only successful delivery enables verification; ambiguous/failed delivery does not automatically retry. D1 atomic batches and a unique challenge-generation index prevent concurrent reuse. Verification creates a one-hour HttpOnly session and saves the email verification result. Owner and visitor cookies/authentication are independent. Verification stops before real agent/identity checks or bookings.
 
@@ -62,8 +64,7 @@ conversation replies and sample activity). These share `OwnerWorkflowDemo.astro`
 with `/owner/demo/`. Sample owner controls appear only on the standalone demo;
 the authenticated dashboard retains real database-backed owner management.
 Sample actions do not send mail, install PINs or write booking records. Request
-and reply examples reset on reload; the availability demo retains its existing
-browser-local storage. The visitor demo switch remains independent of these
+and reply examples reset on reload; the availability link opens the real shared D1 calendar. The visitor demo switch remains independent of these
 owner-only sample controls.
 
 
@@ -92,7 +93,4 @@ The public visitor API cannot select owner-mail delivery. Only authenticated
 active owners can create invitations. Existing rate limits and the visitor-demo
 switch remain enforced. This policy was deployed with PR #9 at 0.3.1.0; future source edits still require reviewed promotion to change live behavior.
 
-Availability blocks, default ranges, sample bookings and sample feedback still
-use browser-local storage. They are not D1-backed and should not be used to test
-cross-device availability. A later scheduling implementation must persist owner
-rules and exceptions and calculate visitor availability from the same server data.
+Availability rules and dated exceptions now use D1 through migration 0005. Sample bookings and feedback remain browser-local. No browser examples or legacy scaffold availability records are imported. See [calendar availability](calendar-availability.md) for precedence, time-zone rules, concurrency and migration review. This describes the local 0.4.0.0 candidate; remote environments remain at the last verified release until separately published.

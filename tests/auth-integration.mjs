@@ -54,8 +54,21 @@ try {
  const secondLogin=await post('/api/owner-auth/sign-in/email',{email:'visitor@example.com',password:secondPassword});assert.equal(secondLogin.status,200);
  const secondCookie=cookies(secondLogin),second=db.prepare("SELECT id FROM owner_accounts WHERE email_normalized='visitor@example.com'").get();
  assert.equal((await fetch(base+'/owner/dashboard',{headers:{cookie:secondCookie},redirect:'manual'})).status,200);
+ // Availability: independent owner cookies share D1; mutations are origin-bound and revision-checked.
+ async function calendar(cookie=ownerCookie){const r=await fetch(base+'/api/owner/availability',{headers:{cookie}});assert.equal(r.status,200);return r.json();}
+ const available={kind:'available',local_day:null,weekday:-1,start_minute:540,end_minute:1020};
+ const change=(data,cookie=ownerCookie,origin=base)=>post('/api/owner/availability',data,cookie,origin);
+ assert.equal((await fetch(base+'/api/owner/availability')).status,401);
+ assert.equal((await change({revision:0,action:'add',period:available},'')).status,401);
+ assert.equal((await change({revision:0,action:'add',period:available},ownerCookie,'https://attacker.invalid')).status,400);
+ assert.equal((await change({revision:0,action:'add',period:available})).status,200);
+ const sharedCalendar=await calendar(secondCookie);assert.equal(sharedCalendar.revision,1);assert.equal(sharedCalendar.periods.length,1);
+ const competing=await Promise.all([ownerCookie,secondCookie].map(cookie=>change({revision:1,action:'add',period:{...available,kind:'blocked',start_minute:600,end_minute:660}},cookie)));
+ assert.deepEqual(competing.map(r=>r.status).sort(),[200,409]);
+ assert.equal((await calendar()).revision,2);
  assert.equal((await post('/api/owner/remove',{id:second.id},ownerCookie)).status,200);
  assert.equal((await fetch(base+'/owner/dashboard',{headers:{cookie:secondCookie},redirect:'manual'})).status,303,'Removed owner session is immediately invalidated');
+ assert.equal((await change({revision:2,action:'add',period:available},secondCookie)).status,401);
  db.exec("UPDATE email_challenges SET last_sent_at=0");
  assert.equal((await post('/api/visitor/send',{email:'VISITOR@example.com'})).status,200);
  const first=mail('visitor@example.com').match(/\d{8}/)[0];
@@ -73,8 +86,23 @@ try {
  assert.equal((await fetch(base+'/viewings/status/',{headers:{cookie:visitorCookie},redirect:'manual'})).status,200);
  assert.equal(db.prepare("SELECT id FROM visitors WHERE email_normalized='visitor@example.com'").get().id,before.id,'Same email retains visitor ID');
  assert.equal((await fetch(base+'/viewings/demo/',{headers:{cookie:visitorCookie},redirect:'manual'})).status,200);
+ const easternDay=new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+ const tomorrow=new Date(Date.parse(easternDay+'T12:00:00Z')+86400000).toISOString().slice(0,10);
+ const slotPath=base+`/api/visitor/availability?from=${tomorrow}&to=${tomorrow}`;
+ assert.equal((await fetch(slotPath)).status,401);
+ assert.equal((await change({revision:2,action:'add',period:available},visitorCookie)).status,401);
+ const visitorSlots=await fetch(slotPath,{headers:{cookie:visitorCookie}});assert.equal(visitorSlots.headers.get('cache-control'),'no-store');
+ const payload=await visitorSlots.json();assert.deepEqual(Object.keys(payload).sort(),['slots','timeZone']);assert.equal(payload.slots.length,7);assert.ok(!payload.slots.some(s=>s.start==='10:00'));
+ const current=await calendar(),block=current.periods.find(p=>p.kind==='blocked');
+ assert.equal((await change({revision:current.revision,action:'remove',id:block.id})).status,200);
+ assert.equal((await (await fetch(slotPath,{headers:{cookie:visitorCookie}})).json()).slots.length,8);
+ assert.equal((await change({revision:3,action:'remove',id:current.periods.find(p=>p.kind==='available').id})).status,200);
+ assert.equal((await (await fetch(slotPath,{headers:{cookie:visitorCookie}})).json()).slots.length,0);
+ assert.equal(db.prepare('SELECT COUNT(*) n FROM bookings').get().n,0);
  await post('/api/owner/visitor-demo',{enabled:false},ownerCookie);
  assert.equal((await post('/api/visitor/demo-access',{},visitorCookie)).status,403);
+ assert.equal((await fetch(slotPath,{headers:{cookie:visitorCookie}})).status,403);
+ assert.equal((await change({revision:4,action:'add',period:available})).status,200,'Owners can manage availability while visitor demo is off');
  assert.equal((await fetch(base+'/viewings/demo/',{headers:{cookie:visitorCookie},redirect:'manual'})).status,303);
  await post('/api/owner/visitor-demo',{enabled:true},ownerCookie);
  await post('/api/visitor/sign-out',{},visitorCookie);

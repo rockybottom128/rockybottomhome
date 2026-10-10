@@ -1,14 +1,14 @@
 {
   "schema": 1,
-  "version": "0.3.1.0",
+  "version": "0.4.0.0",
   "stage": "prelaunch",
   "base": {
-    "commit": "60dcda607cb3c83ec4fe7dbb5fd56d648267c564",
+    "commit": "29eb5e0429fac7777c3473dedb00375ec830d8d2",
     "version": "0.3.1.0",
     "stage": "prelaunch"
   },
   "change": {
-    "level": "none",
-    "reason": "Document verified shared development and production configuration and reconcile recovery guidance"
+    "level": "feature",
+    "reason": "Persist shared owner availability and blocks in D1 with authenticated calendar APIs and server-calculated visitor slots"
   }
 }
