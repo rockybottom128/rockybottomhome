@@ -50,7 +50,8 @@
 		"build:auth-dev": "node scripts/development/auth-dev.mjs build",
 		"deploy:auth-dev": "node scripts/development/auth-dev.mjs deploy",
 		"test:auth:isolated": "node scripts/development/test-auth.mjs",
-		"test:auth-dev-policy": "node --test tests/auth-dev-policy.test.mjs"
+		"test:auth-dev-policy": "node --test tests/auth-dev-policy.test.mjs",
+		"test:build-target": "node --test tests/build-target.test.mjs"
 	},
 	"type": "module"
 }

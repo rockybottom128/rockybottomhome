@@ -1,0 +1,41 @@
+{
+  "name": "rockybottomhome",
+  "compatibility_date": "2025-10-08",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "main": "@astrojs/cloudflare/entrypoints/server",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true
+  },
+  "upload_source_maps": true,
+  "preview_urls": true,
+  "account_id": "e6144913ec6fa3b523d5d7e50cce2c40",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "rockybottomhome-production",
+      "database_id": "7743925a-8b60-4d73-8676-7f6ead34f596",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "vars": {
+    "APP_ORIGIN": "https://rockybottomhome.com",
+    "AUTH_ENABLED": "true",
+    "MAIL_MODE": "resend",
+    "MAIL_FROM": "bookings@notify.rockybottomhome.com",
+    "MAIL_REPLY_TO": "bookings@rockybottomhome.com"
+  },
+  "secrets": {
+    "required": [
+      "AUTH_SECRET",
+      "OTP_SECRET",
+      "RESEND_API_KEY",
+      "MAIL_ALLOWED_RECIPIENTS"
+    ]
+  }
+}

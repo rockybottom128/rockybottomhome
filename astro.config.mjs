@@ -4,6 +4,7 @@ import mdx from "@astrojs/mdx";
 import sitemap from "@astrojs/sitemap";
 
 import cloudflare from "@astrojs/cloudflare";
+import { buildConfig } from './scripts/production/build-target.mjs';
 import versionIntegration from "./scripts/version-integration.mjs";
 
 // https://astro.build/config
@@ -16,7 +17,6 @@ export default defineConfig({
 	integrations: [versionIntegration(), mdx(), sitemap()],
 	adapter: cloudflare({
 		imageService: "compile",
-		...(process.env.RB_AUTH_DEV === "1" ? { configPath: "wrangler.auth-dev.json" }
-			: process.env.RB_LOCAL_AUTH === "1" ? { configPath: "wrangler.auth-local.json" } : {}),
+		configPath: buildConfig(process.env),
 	}),
 });

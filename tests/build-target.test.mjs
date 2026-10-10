@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {buildConfig} from '../scripts/production/build-target.mjs';
+const ci={WORKERS_CI:'1',WORKERS_CI_BRANCH:'main',WORKERS_CI_COMMIT_SHA:'a'.repeat(40)};
+assert.equal(buildConfig(ci),'wrangler.production.json');
+for(const env of [{},{...ci,WORKERS_CI_BRANCH:'rockyadmin/database-owner-auth'},{...ci,WORKERS_CI:'0'},{...ci,WORKERS_CI_COMMIT_SHA:''}])assert.equal(buildConfig(env),'wrangler.json');
+assert.equal(buildConfig({...ci,RB_AUTH_DEV:'1'}),'wrangler.auth-dev.json');
+assert.equal(buildConfig({...ci,RB_LOCAL_AUTH:'1'}),'wrangler.auth-local.json');
+const prod=JSON.parse(readFileSync('wrangler.production.json'));
+const dev=JSON.parse(readFileSync('wrangler.auth-dev.json'));
+const preview=JSON.parse(readFileSync('wrangler.json'));
+assert.equal(prod.name,'rockybottomhome');
+assert.equal(prod.vars.APP_ORIGIN,'https://rockybottomhome.com');
+assert.equal(prod.d1_databases[0].database_id,'7743925a-8b60-4d73-8676-7f6ead34f596');
+assert.notEqual(prod.d1_databases[0].database_id,dev.d1_databases[0].database_id);
+assert.ok(!preview.d1_databases?.length);
+for(const key of ['AUTH_SECRET','OTP_SECRET','RESEND_API_KEY'])assert.ok(!Object.hasOwn(prod.vars,key));
+console.log('PASS: only Cloudflare main selects production DB; dev and ordinary preview configs remain separate.');

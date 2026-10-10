@@ -93,7 +93,8 @@ The one-time remote Git connection requires Workers Builds Configuration Edit;
 the current narrow Wrangler OAuth grant does not include this permission. Verify
 a successful build for the exact pushed commit before calling automatic builds
 ready. The owner connected this Worker to GitHub on October 10, 2026, with the
-branch and commands above. The first automatic build still needs verification.
+branch and commands above. The first automatic build passed for commit `a3d8318`; the owner confirmed login
+and visitor email verification afterward.
 
 Cloudflare may suggest renaming the default `wrangler.json` to match this Worker.
 Do not apply that suggestion: the default configuration belongs to production,
@@ -105,7 +106,50 @@ D1 database and fake-mail sink on port 4325. It never uses the real preview's
 credentials, data or rate limits. The normal local preview remains on port 4324.
 
 Creating a PR on another computer needs only the pushed feature branch. No
-Cloudflare or Resend secrets should be copied there. Production database/secrets
-and a production migration/deploy plan are still required before promoting the
-backend; merging this branch with the current default configuration leaves auth
-unconfigured and disabled on production.
+Cloudflare or Resend secrets should be copied there. Production preparation and the remaining merge steps are recorded below.
+
+
+## Production preparation (October 10, 2026)
+
+Production D1: `rockybottomhome-production`, ID
+`7743925a-8b60-4d73-8676-7f6ead34f596`, separate from development. Migrations
+0001–0004 were applied explicitly under the owner's production-setup request.
+The initial owner is present in `invited` status, with a random discarded password;
+no development password, sessions or visitor records were copied. There is no
+production bootstrap token. `visitor_demo` is `off`.
+
+`wrangler.production.json` supplies the production DB binding and exact canonical
+origin `https://rockybottomhome.com`. Astro selects it only for Cloudflare's main
+build with a valid CI commit identity. Ordinary branch builds keep the original
+unconfigured `wrangler.json`; the dedicated auth development build still uses its
+own config and DB. The existing production build/deploy commands remain unchanged:
+`npm run build` and `npx wrangler deploy` (using Astro's generated configuration).
+No direct production code deployment is part of preparation.
+
+Production uses independent AUTH_SECRET and OTP_SECRET, the existing domain-scoped
+send-only Resend key, and the private approved-recipient list. Required secret
+names in the production config make a missing-secret deployment fail explicitly.
+Because the Worker already has undeployed preview versions, secrets are staged
+with `wrangler versions secret bulk` without activating a version. The public
+site must remain on 0.2.0.0 until the approved PR merge. The recipient list is
+initially limited to the owner's approved test email, even on production.
+
+Worker version previews are not a secrets isolation boundary: Wrangler preserves
+Worker secrets across versions. Production Worker preview code and its build token
+must therefore remain trusted. The separate auth-development Worker has separate
+authentication keys and data. Do not grant untrusted repositories or contributors
+access to either Worker's build credentials.
+
+Before merge, recheck the updated PR head/checks, production secret names, all
+pending migrations and the disabled visitor setting. Apply future production
+migrations explicitly before their authorized promotion; the development deploy
+script never migrates production. This configuration is not launch authorization.
+
+After the separately approved merge and successful main deployment:
+1. Verify `/version.json` identifies the actual merge commit and 0.3.0.0.
+2. At `/owner/`, enter the configured owner email and choose **Set or reset my
+   password**. Use the emailed link to set a production password, then sign in.
+3. Confirm the visitor demo is disabled; enable only for an intentional test.
+4. Check wrong-password rejection, logout, verification delivery and saved results.
+   Disable visitor testing afterward. Identity, bookings and lockbox access remain
+   simulations. Receiving mail / a shared inbox remains outside this batch.
