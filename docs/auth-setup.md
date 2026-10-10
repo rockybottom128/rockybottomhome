@@ -92,8 +92,13 @@ other contributor branches. Existing production Worker builds remain unchanged.
 The one-time remote Git connection requires Workers Builds Configuration Edit;
 the current narrow Wrangler OAuth grant does not include this permission. Verify
 a successful build for the exact pushed commit before calling automatic builds
-ready. Until that connection is configured, a push does not update the dedicated
-auth development site.
+ready. The owner connected this Worker to GitHub on October 10, 2026, with the
+branch and commands above. The first automatic build still needs verification.
+
+Cloudflare may suggest renaming the default `wrangler.json` to match this Worker.
+Do not apply that suggestion: the default configuration belongs to production,
+and `build:auth-dev` explicitly selects `wrangler.auth-dev.json`. Review any
+automatically generated configuration PR instead of merging it.
 
 `npm run test:auth:isolated` tests the current source in a disposable local checkout,
 D1 database and fake-mail sink on port 4325. It never uses the real preview's
