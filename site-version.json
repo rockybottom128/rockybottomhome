@@ -1,14 +1,14 @@
 {
   "schema": 1,
-  "version": "0.2.0.0",
+  "version": "0.3.0.0",
   "stage": "prelaunch",
   "base": {
-    "commit": "7179fa4b495b1d1412b05ac3e51da12d5c418d8f",
-    "version": "0.1.0.0",
+    "commit": "b63de9fea1d076ed2cd0b6c42d98941e782da5ff",
+    "version": "0.2.0.0",
     "stage": "prelaunch"
   },
   "change": {
     "level": "feature",
-    "reason": "Scaffold verified viewing requests, rolling calendars, owner availability and timed access workflows"
+    "reason": "Connect development database, protected owner accounts and email verification"
   }
 }

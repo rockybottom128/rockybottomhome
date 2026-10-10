@@ -42,11 +42,4 @@ export interface OwnerAccounts {
   invite(email: string, actorId: string): Promise<void>;
   removeAndRevokeSessions(ownerId: string, actorId: string): Promise<void>;
 }
-export const integrationState = {
-  liveIntake: false,
-  passwordLogin: false,
-  stripe: false,
-  gmail: false,
-  igloohome: false,
-  agentLicenseLookup: false,
-} as const;
+// Availability and authorization are now checked server-side at runtime.

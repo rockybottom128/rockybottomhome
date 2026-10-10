@@ -201,3 +201,12 @@ dist
 ### Astro ###
 .astro/
 src/generated/build-info.json
+
+# Local authentication credentials and test artifacts
+.secrets/
+.auth-test/
+
+__pycache__/
+*.pyc
+
+.resend-setup-*

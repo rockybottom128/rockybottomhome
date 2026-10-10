@@ -11,10 +11,12 @@ export default defineConfig({
 	site: "https://rockybottomhome.com",
 	// Preserve the existing spacing between inline elements after the Astro 7 upgrade.
 	compressHTML: true,
-	// This public demo has no sessions; do not provision a KV namespace on deploy.
+	// Authentication uses D1 sessions; Astro's separate KV session store is unnecessary.
 	session: false,
 	integrations: [versionIntegration(), mdx(), sitemap()],
 	adapter: cloudflare({
 		imageService: "compile",
+		...(process.env.RB_AUTH_DEV === "1" ? { configPath: "wrangler.auth-dev.json" }
+			: process.env.RB_LOCAL_AUTH === "1" ? { configPath: "wrangler.auth-local.json" } : {}),
 	}),
 });

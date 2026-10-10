@@ -1,0 +1,8 @@
+import {post,field,message,busy} from './auth-request';
+let email='',resendAt=0;
+async function send(){await post('/api/visitor/send',{email});resendAt=Date.now()+60000;document.getElementById('live-email-form')!.hidden=true;document.getElementById('live-code-form')!.hidden=false;field('live-code').value='';field('live-code').focus();message('live-email-result','Check your email for the latest code. It expires in ten minutes.');}
+document.getElementById('live-email-form')!.addEventListener('submit',e=>{e.preventDefault();email=field('live-email').value.trim().toLowerCase();void busy(document.querySelector<HTMLButtonElement>('#live-email-form button')!,send,'live-email-result');});
+document.getElementById('live-resend')!.addEventListener('click',e=>{if(Date.now()<resendAt){message('live-email-result',`Please wait ${Math.ceil((resendAt-Date.now())/1000)} seconds before resending.`);return;}void busy(e.currentTarget as HTMLButtonElement,send,'live-email-result');});
+document.getElementById('live-change')!.addEventListener('click',()=>{document.getElementById('live-code-form')!.hidden=true;document.getElementById('live-email-form')!.hidden=false;field('live-email').focus();});
+document.getElementById('live-code-form')!.addEventListener('submit',e=>{e.preventDefault();void busy(document.querySelector<HTMLButtonElement>('#live-code-form button[type=submit]')!,async()=>{await post('/api/visitor/verify',{email,code:field('live-code').value});location.assign('/viewings/status/');},'live-email-result');});
+document.getElementById('visitor-signout')!.addEventListener('click',e=>void busy(e.currentTarget as HTMLButtonElement,async()=>{await post('/api/visitor/sign-out',{});location.assign('/viewings/');},'live-email-result'));

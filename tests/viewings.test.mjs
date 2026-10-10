@@ -47,6 +47,7 @@ function database() {
   const db = new DatabaseSync(':memory:');
   db.exec(readFileSync(new URL('../migrations/0001_viewings.sql', import.meta.url), 'utf8'));
   db.exec(readFileSync(new URL('../migrations/0002_booking_flow.sql', import.meta.url), 'utf8'));
+  db.exec(readFileSync(new URL('../migrations/0003_auth.sql', import.meta.url), 'utf8'));
   return db;
 }
 test('D1 schema prevents duplicate visitors and overlapping reservations including updates', () => {
@@ -121,8 +122,8 @@ test('challenge replacement is unique and cancellation records require notificat
   const db=database();
   try {
     db.exec("INSERT INTO visitors(id,email_normalized,created_at) VALUES ('v1','sample@example.com',1)");
-    db.exec("INSERT INTO email_challenges VALUES ('v1','g1','digest1',100,0,NULL,1)");
-    assert.throws(()=>db.exec("INSERT INTO email_challenges VALUES ('v1','g2','digest2',200,0,NULL,2)"));
+    db.exec("INSERT INTO email_challenges(visitor_id,generation,code_digest,expires_at,attempts,consumed_at,last_sent_at) VALUES ('v1','g1','digest1',100,0,NULL,1)");
+    assert.throws(()=>db.exec("INSERT INTO email_challenges(visitor_id,generation,code_digest,expires_at,attempts,consumed_at,last_sent_at) VALUES ('v1','g2','digest2',200,0,NULL,2)"));
     db.exec("UPDATE email_challenges SET generation='g2',code_digest='digest2',attempts=0,expires_at=200 WHERE visitor_id='v1'");
     assert.equal(db.prepare('SELECT code_digest FROM email_challenges').get().code_digest,'digest2');
     db.exec("INSERT INTO availability_slots VALUES ('s1',100,200,'agent_private',1)");

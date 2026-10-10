@@ -1,0 +1,12 @@
+---
+export const prerender=false;
+import ViewingLayout from '../../layouts/ViewingLayout.astro';
+import ViewingIntake from '../../components/ViewingIntake.astro';
+import {runtime} from '../../server/runtime';
+import {configured} from '../../server/env';
+import {getVisitor} from '../../server/visitor-auth';
+import {visitorDemoEnabled} from '../../server/settings';
+const env=runtime();
+if(!configured(env,Astro.request) || !await visitorDemoEnabled(env) || !await getVisitor(env,Astro.request))return Astro.redirect('/viewings/',303);
+---
+<ViewingLayout title="Simulated viewing workflow"><ViewingIntake source="public" verifiedDemo={true} /></ViewingLayout>

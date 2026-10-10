@@ -1,0 +1,6 @@
+import {post,field,message,busy} from './auth-request';
+document.getElementById('owner-signout')!.addEventListener('click',e=>void busy(e.currentTarget as HTMLButtonElement,async()=>{await post('/api/owner-auth/sign-out',{});location.assign('/owner/');},'owner-action-result'));
+document.getElementById('owner-invite')!.addEventListener('submit',e=>{e.preventDefault();void busy(document.querySelector<HTMLButtonElement>('#owner-invite button')!,async()=>{await post('/api/owner/invite',{email:field('invite-email').value});location.reload();},'owner-action-result');});
+document.querySelectorAll<HTMLButtonElement>('[data-remove-owner]').forEach(button=>button.addEventListener('click',()=>{if(!confirm('Remove this owner’s access and sign them out?'))return;void busy(button,async()=>{await post('/api/owner/remove',{id:button.dataset.removeOwner});location.reload();},'owner-action-result');}));
+
+document.getElementById('visitor-demo-settings')!.addEventListener('submit',e=>{e.preventDefault();void busy(document.querySelector<HTMLButtonElement>('#visitor-demo-settings button')!,async()=>{await post('/api/owner/visitor-demo',{enabled:field('visitor-demo-enabled').checked});location.reload();},'visitor-settings-result');});
