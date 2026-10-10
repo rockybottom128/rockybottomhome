@@ -18,29 +18,31 @@ contents to permanent `dev`, which builds the existing shared site at
 https://rockybottomhome-auth-dev.accts-e61.workers.dev. Its database and credentials
 persist across batches. Test one batch at a time and verify the completed build.
 
-The owner must first set the dev Worker build branch to `dev` once, as described in
-[auth setup](auth-setup.md#automatic-development-builds). No per-batch Cloudflare
-setting changes or contributor Cloudflare credentials are needed afterward.
+The dev Worker already watches permanent `dev`; this was verified October 10, 2026.
+No per-batch Cloudflare setting changes or contributor Cloudflare credentials are
+needed. See the [environment runbook](environment-runbook.md) for rebuild/recovery settings.
 Open production PRs from feature branches, never from dev. If the owner plans to
 create the PR on another computer, publish and report the branch without creating
 a PR here. Production continues through separately approved merges to main.
 
-## Cloudflare routing
+## Separate per-commit previews
 
 The existing `rockybottomhome` Worker uses Workers Builds (not Pages). Main builds production; non-production branches use `npx wrangler versions upload` with Preview URLs enabled. The build command is `npm run build`. Repository root is the Cloudflare build root; the local `website` parent layout does not change that. The bare `rockybottomhome.accts-e61.workers.dev` hostname is also production. Development previews have prefixed version/branch hostnames supplied by Cloudflare.
 
-The development preview path was verified separately from production during setup. Do not use direct `wrangler deploy` commands for contributor changes. Cloudflare authenticates its own Git-triggered builds; Karen needs no local Cloudflare credentials.
+These previews support the production Worker check and source review; use the shared dev site above for authenticated email/database testing. Do not use direct `wrangler deploy` commands for contributor changes. Cloudflare authenticates its own Git-triggered builds; Karen needs no local Cloudflare credentials.
 
 ## Contributor submission
 
 1. Run the build, TypeScript check, and `git diff --check`; inspect relevant desktop/mobile behavior and staged changes.
 2. Commit the approved batch and use `npm run publish:dev -- --publish`; never push main.
 3. Open/update a pull request targeting main and request `rockybottom128` review. Do not merge or enable auto-merge as a contributor.
-4. Wait for the exact commit's successful Cloudflare check. Retrieve and verify the preview URL from its PR comment/build details; never invent a URL. Return the PR and version-preview links.
+4. Wait for both the feature commit's required production-Worker preview check and the shared dev deployment check. Dev may have a snapshot SHA distinct from the feature SHA; confirm its source tree and live `/version.json`. Retrieve the immutable PR preview from its Cloudflare comment/build details. Return the actual PR and shared-dev links.
 5. Iterate on that branch until the owner approves. New pushes may dismiss prior approvals.
 
 ## Owner publishing and protections
 
 The owner reviews the exact proposed batch and separately authorizes its merge into main. Cloudflare then updates production. Verify its successful build and website before reporting completion.
 
-Main requires a review and code-owner review, dismisses stale approvals, and has an active Production updates by owner ruleset restricting updates to repository administrators. CODEOWNERS names `rockybottom128` for all files. Keep contributors at ordinary write access. Owner-authored setup changes cannot be self-approved; a permitted administrator override can be used only for a separately authorized owner task, never for contributor publishing. Do not weaken or remove protections to make a merge work.
+Main requires a review and code-owner review, dismisses stale approvals, and has an active Production updates by owner ruleset restricting updates to repository administrators. CODEOWNERS names `rockybottom128` for all files. Keep contributors at ordinary write access. Owner-authored changes cannot satisfy review by self-approval; use an authorized separate reviewer/contributor workflow. Do not weaken or remove protections to make a merge work.
+
+For current resource IDs, build commands, database persistence, secret names, and recovery gaps, see the [environment runbook](environment-runbook.md). Authentication procedures are in [auth setup](auth-setup.md). Do not place secret values or recovery codes in either document.

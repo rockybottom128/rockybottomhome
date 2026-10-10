@@ -5,6 +5,7 @@
 - Website repository lives in the `website` subfolder of the broader RockyBottomHome project. Run Git, npm, and build commands from this repository root. Keep unrelated project documents and source photos outside it; copy only approved website assets into `public`.
 - This is an existing Astro 7 website on Cloudflare Workers Builds, not Cloudflare Pages or a Sites-managed project. Preserve its architecture, dependency lockfile, and deployment configuration.
 - Production: https://rockybottomhome.com and https://rockybottomhome.accts-e61.workers.dev. Both are production destinations.
+- Read `docs/environment-runbook.md` before infrastructure, database, authentication deployment, or recovery work. It distinguishes verified remote settings from source configuration and records open recovery gaps. Keep its verification date/evidence current when authorized infrastructure changes occur.
 - The owner is GitHub account `rockybottom128`. Contributors use their own authorized GitHub account, never the owner's credentials.
 
 ## Local editing is the default
@@ -18,15 +19,15 @@
 
 ## Development publication and production boundary
 - For contributor sessions, “push”, “publish”, or “deploy” refers to publishing the approved batch to a DEVELOPMENT PREVIEW and opening/updating a pull request, not production. If ambiguous, state this interpretation before acting.
-- Use Cloudflare's existing Git integration: push the explicitly named contributor branch, then open/update a PR targeting `main`. Never merge the PR as a contributor. Request review from `rockybottom128`.
+- Use the shared-dev publishing command below for an authorized batch. Open/update a PR from its feature branch to `main` unless the user will create the PR elsewhere. Never merge as a contributor. Request review from `rockybottom128`.
 - NEVER push directly to `main`, force-push, merge to `main`, enable auto-merge, bypass branch protections, change production routes/DNS/domains, or run a production deploy as part of Karen's contributor workflow. Production promotion is a separate owner-controlled task after review of the exact batch.
 - `npm run deploy` and `wrangler deploy` target production with this repository's current configuration. Do not run them. A different Git branch does NOT make a direct Wrangler deploy safe. Do not use `wrangler versions deploy` either.
 - Contributors need no Cloudflare API token or local `wrangler login`: Cloudflare Workers Builds authenticates its own builds from GitHub.
 - Expected Cloudflare configuration: Worker `rockybottomhome`; production branch `main`; build command `npm run build`; non-production branch builds enabled; non-production deploy command `npx wrangler versions upload`; Preview URLs enabled. The bare `rockybottomhome.accts-e61.workers.dev` URL is production, not dev.
 - Preview URLs are prefixed version/branch hostnames provided by Cloudflare. Retrieve the exact URL from the current PR's Cloudflare bot comment/check; never guess it or reuse another batch's preview. A branch URL can change contents after later pushes; use the immutable version URL for final review.
-- Authenticated testing uses the separate shared Worker `rockybottomhome-auth-dev` and its persistent development D1 database. After explicit batch publication approval, use `npm run publish:dev -- --publish` from a committed `rockyadmin/*`, `karen/*` or `scott/*` feature branch. It publishes the feature branch and exact source tree to permanent `dev` without force-pushing. Never open a production PR from dev. Test one batch at a time and verify the dev build commit at `/version.json`. See `docs/auth-setup.md` for the one-time Cloudflare branch setup.
+- Authenticated testing uses the separate shared Worker `rockybottomhome-auth-dev` and its persistent development D1 database. After explicit batch publication approval, use `npm run publish:dev -- --publish` from a committed `rockyadmin/*`, `karen/*` or `scott/*` feature branch. It publishes the feature branch and exact source tree to permanent `dev` without force-pushing. Never open a production PR from dev. Test one batch at a time and verify the dev build commit at `/version.json`. The permanent dev branch setup is already operational; see `docs/environment-runbook.md` for its verified configuration.
 - Respect a user request to create the PR on another computer: publish the batch without opening a PR here. The original production Worker preview check remains separate and must continue passing.
-- After pushing, wait for the Cloudflare check on the exact commit, require success, open/fetch the preview, verify the requested content, and return the PR and preview links. A successful Git push alone is not a successful deployment.
+- After publishing, require the feature commit’s production-Worker preview check and the shared-dev deployment to succeed. A dev snapshot SHA can differ from the feature SHA while retaining its exact tree; verify that tree and live `/version.json`. Verify requested content and return the actual links. A successful Git push alone is not a successful deployment.
 - Never alter the routing to fix a preview failure without a separate owner request.
 
 ## Repository onboarding
