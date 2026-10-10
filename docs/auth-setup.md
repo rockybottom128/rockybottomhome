@@ -71,12 +71,22 @@ owner-only sample controls.
 
 ## Automatic development builds
 
+Publish an approved committed feature batch with `npm run publish:dev -- --publish`.
+This atomically pushes the feature branch and updates permanent `dev` with exactly
+that source tree. It preserves dev history without force-pushing or merging old
+dev changes into the feature branch. Concurrent pushes fail safely; investigate
+before retrying. Open the production PR from the feature branch, never from dev.
+The shared site keeps the same D1 database, secrets and URL across batches.
+Test one batch at a time; wait for its build to finish before publishing another.
+This changes publication, not the browser-only sample calendar storage.
+
+
 The dedicated development Worker must be connected to the existing GitHub repo
 `rockybottom128/rockybottomhome`, independently of the production Worker's builds.
 In **rockybottomhome-auth-dev → Settings → Builds**, use:
 
-- Branch: `rockyadmin/database-owner-auth` (the primary deployment branch of this
-  development Worker, even if Cloudflare labels the field “production branch”).
+- Branch: `dev` (the permanent deployment branch of this development Worker,
+  even if Cloudflare labels the field “production branch”).
 - Root directory: `/` (the Git repository root already contains package.json).
 - Build command: `npm run build:auth-dev`.
 - Deploy command: `npm run deploy:auth-dev`.
@@ -86,14 +96,15 @@ In **rockybottomhome-auth-dev → Settings → Builds**, use:
 Runtime email/auth secrets stay on the Worker; do not copy them into build
 variables. The deploy command validates the target, applies pending migrations
 only to development D1, and deploys the generated Astro configuration. Migrations
-preserve existing owner accounts and settings. The branch guard rejects main and
-other contributor branches. Existing production Worker builds remain unchanged.
+do not reset the database; future migrations still require review for data effects.
+The branch guard accepts dev and approved contributor prefixes, and rejects main.
+Existing production Worker builds remain unchanged.
 
 The one-time remote Git connection requires Workers Builds Configuration Edit;
 the current narrow Wrangler OAuth grant does not include this permission. Verify
 a successful build for the exact pushed commit before calling automatic builds
-ready. The owner connected this Worker to GitHub on October 10, 2026, with the
-branch and commands above. The first automatic build passed for commit `a3d8318`; the owner confirmed login
+ready. The owner connected this Worker to GitHub on October 10, 2026, initially using `rockyadmin/database-owner-auth`. Switching its primary branch to
+`dev` is a one-time dashboard change still requiring remote confirmation. The first automatic build passed for commit `a3d8318`; the owner confirmed login
 and visitor email verification afterward.
 
 Cloudflare may suggest renaming the default `wrangler.json` to match this Worker.

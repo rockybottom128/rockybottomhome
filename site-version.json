@@ -9,6 +9,6 @@
   },
   "change": {
     "level": "update",
-    "reason": "Allow visitor verification on approved domains and owner invitations to registered owners independently"
+    "reason": "Allow approved visitor email domains, limit owner links to owner pages, and publish batches to one persistent development site"
   }
 }
