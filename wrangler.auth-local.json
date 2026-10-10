@@ -29,6 +29,7 @@
     "MAIL_FROM": "bookings@notify.rockybottomhome.com",
     "MAIL_REPLY_TO": "bookings@rockybottomhome.com",
     "MAIL_ALLOWED_RECIPIENTS": "owner@example.com,visitor@example.com",
-    "BOOTSTRAP_OWNER_EMAIL": "owner@example.com"
+    "BOOTSTRAP_OWNER_EMAIL": "owner@example.com",
+    "VISITOR_EMAIL_DOMAINS": "farts.cloud,scottdempsey.com,table42.cafe"
   }
 }

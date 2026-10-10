@@ -14,4 +14,12 @@ export function validateAuthDevConfig(c){
  for(const key of ['RESEND_API_KEY','AUTH_SECRET','OTP_SECRET','BOOTSTRAP_TOKEN'])assert.ok(!Object.hasOwn(c.vars,key),'Credentials must remain in Worker secrets');
 }
 
-export function validateAuthDevBranch(branch){assert.equal(branch,'rockyadmin/database-owner-auth','This development target accepts only the authentication feature branch');}
+export function validateFeatureBranch(branch){
+ assert.ok(typeof branch === 'string' && /^(rockyadmin|karen|scott)\/[A-Za-z0-9][A-Za-z0-9._/-]*$/.test(branch)
+  && !branch.includes('..') && !branch.includes('//') && !branch.endsWith('/') && !branch.endsWith('.')
+  && !branch.split('/').some(part=>part.startsWith('.') || part.endsWith('.lock')),
+  'Use a rockyadmin/, karen/ or scott/ feature branch');
+}
+export function validateAuthDevBranch(branch){
+ if(branch !== 'dev') validateFeatureBranch(branch);
+}

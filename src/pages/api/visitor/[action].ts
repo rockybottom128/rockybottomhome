@@ -29,7 +29,7 @@ export const POST:APIRoute=async({request,params})=>{
     return json({error:'Not found.'},404);
   } catch(error) {
     if(error instanceof RateLimitError)return json({error:error.message,retryAfter:error.retryAfter},429,{'Retry-After':String(error.retryAfter)});
-    const safe=error instanceof Error && /^(Enter a valid|Please wait|We could not send|Invalid request|Request too large)/.test(error.message);
+    const safe=error instanceof Error && /^(This email is not enabled|Enter a valid|Please wait|We could not send|Invalid request|Request too large)/.test(error.message);
     return json({error:safe?(error as Error).message:'Unable to complete verification. Please try again.'},400);
   }
 };

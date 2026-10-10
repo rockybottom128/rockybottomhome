@@ -1,14 +1,14 @@
 {
   "schema": 1,
-  "version": "0.3.0.0",
+  "version": "0.3.1.0",
   "stage": "prelaunch",
   "base": {
-    "commit": "b63de9fea1d076ed2cd0b6c42d98941e782da5ff",
-    "version": "0.2.0.0",
+    "commit": "1acc4ce58fbd15650167e7f27ebb1a965715437a",
+    "version": "0.3.0.0",
     "stage": "prelaunch"
   },
   "change": {
-    "level": "feature",
-    "reason": "Connect development database, protected owner accounts and email verification"
+    "level": "update",
+    "reason": "Allow approved visitor email domains, limit owner links to owner pages, and publish batches to one persistent development site"
   }
 }

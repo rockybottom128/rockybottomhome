@@ -9,6 +9,7 @@ export type AppEnv = {
   MAIL_REPLY_TO?: string;
   MAIL_FROM?: string;
   MAIL_ALLOWED_RECIPIENTS?: string;
+  VISITOR_EMAIL_DOMAINS?: string;
   BOOTSTRAP_TOKEN?: string;
   BOOTSTRAP_OWNER_EMAIL?: string;
 };

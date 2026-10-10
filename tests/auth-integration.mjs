@@ -39,6 +39,9 @@ try {
  assert.equal((await post('/api/visitor/verify',{email:'visitor@example.com',code:'00000000'})).status,403);
  assert.equal((await fetch(base+'/viewings/demo/',{redirect:'manual'})).status,303);
  assert.equal((await post('/api/owner/visitor-demo',{enabled:true},ownerCookie)).status,200);
+ const denied=await post('/api/visitor/send',{email:'blocked@notallowed.test',purpose:'owner'});
+ assert.equal(denied.status,400,'Public callers cannot bypass visitor restrictions by requesting owner mail');
+ assert.equal(db.prepare("SELECT COUNT(*) AS n FROM visitors WHERE email_normalized='blocked@notallowed.test'").get().n,0,'Rejected recipient must not create a visitor record');
  assert.match(ownerCookie,/rb-owner/);assert.ok(login.headers.getSetCookie().some(c=>/httponly/i.test(c)));
  const dashboard=await fetch(base+'/owner/dashboard',{headers:{cookie:ownerCookie}});assert.equal(dashboard.status,200);const html=await dashboard.text();assert.match(html,/PRIVATE OWNER DASHBOARD/);assert.match(html,/INTERACTIVE WORKFLOW PREVIEW/);assert.match(html,/id="booking-list"/);assert.doesNotMatch(html,/id="add-owner"/);assert.equal(dashboard.headers.get('cache-control'),'no-store');
  const owner=db.prepare("SELECT id FROM owner_accounts WHERE email_normalized='owner@example.com'").get();
