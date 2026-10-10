@@ -11,6 +11,10 @@ let worker;
 try {
  execFileSync('git',['clone','--quiet','--shared','--no-hardlinks',root,work+'/repo'],{stdio:['ignore',fd,fd]});
  const cwd=work+'/repo';
+ // A local clone's origin/main follows the local main branch, which may lag
+ // behind the fetched upstream used by the feature branch's release record.
+ const baseline=execFileSync('git',['rev-parse','origin/main'],{cwd:root,encoding:'utf8'}).trim();
+ execFileSync('git',['update-ref','refs/remotes/origin/main',baseline],{cwd});
  const files=execFileSync('git',['ls-files','-z','--cached','--others','--exclude-standard'],{cwd:root}).toString().split('\0').filter(Boolean);
  for(const file of files){mkdirSync(dirname(resolve(cwd,file)),{recursive:true});copyFileSync(resolve(root,file),resolve(cwd,file));}
  symlinkSync(resolve(root,'node_modules'),resolve(cwd,'node_modules'),'dir');

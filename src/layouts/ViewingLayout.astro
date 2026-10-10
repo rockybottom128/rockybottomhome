@@ -3,6 +3,7 @@ import '../styles/viewings.css';
 import SiteVersion from '../components/SiteVersion.astro';
 interface Props { title: string }
 const { title } = Astro.props;
+const isOwnerPage = Astro.url.pathname === '/owner' || Astro.url.pathname.startsWith('/owner/');
 ---
 <!doctype html>
 <html lang="en">
@@ -17,7 +18,7 @@ const { title } = Astro.props;
   <body>
     <a class="skip" href="#main">Skip to content</a>
     <div class="preview-notice">DESIGN PREVIEW · Bookings, identity checks and home access are not yet enabled.</div>
-    <header class="portal-header"><a class="brand" href="/">R·B <span>ROCKY BOTTOM HOME</span></a><nav aria-label="Viewing navigation"><a href="/viewings">Plan a visit</a><a href="/viewings/status">My bookings</a><a href="/owner">Owner area</a></nav></header>
+    <header class="portal-header"><a class="brand" href="/">R·B <span>ROCKY BOTTOM HOME</span></a><nav aria-label="Viewing navigation"><a href="/viewings">Plan a visit</a><a href="/viewings/status">My bookings</a>{isOwnerPage && <a href="/owner">Owner area</a>}</nav></header>
     <main id="main"><slot /></main>
     <footer><span>Rocky Bottom · Sunset, SC</span><a href="/">Return to the home</a><SiteVersion /></footer>
   </body>

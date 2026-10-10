@@ -153,3 +153,25 @@ After the separately approved merge and successful main deployment:
 4. Check wrong-password rejection, logout, verification delivery and saved results.
    Disable visitor testing afterward. Identity, bookings and lockbox access remain
    simulations. Receiving mail / a shared inbox remains outside this batch.
+
+
+## Email testing policy update (0.3.1.0)
+
+Visitor verification accepts exact domains listed in `VISITOR_EMAIL_DOMAINS`:
+`farts.cloud`, `scottdempsey.com`, and `table42.cafe`. Matching ignores case but does
+not include subdomains or lookalike suffixes. Existing explicit test addresses in
+`MAIL_ALLOWED_RECIPIENTS` are also supported for local fixtures and controlled
+exceptions. Missing both settings denies visitor mail. A rejected visitor address
+is checked before any visitor row or challenge is created.
+
+Owner mail is independent of visitor-domain restrictions: the mail service checks
+that its recipient is an invited or active owner before sending setup/reset mail.
+The public visitor API cannot select owner-mail delivery. Only authenticated
+active owners can create invitations. Existing rate limits and the visitor-demo
+switch remain enforced. These changes need a new branch review and production
+promotion; changing source does not change live email policy.
+
+Availability blocks, default ranges, sample bookings and sample feedback still
+use browser-local storage. They are not D1-backed and should not be used to test
+cross-device availability. A later scheduling implementation must persist owner
+rules and exceptions and calculate visitor availability from the same server data.

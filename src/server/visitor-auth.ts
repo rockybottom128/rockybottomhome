@@ -1,9 +1,10 @@
 import { code, digest, equal, token } from './crypto';
 import type { AppEnv } from './env';
-import { sendMail } from './mail';
+import { sendMail, visitorRecipientAllowed } from './mail';
 import { limit, RateLimitError } from './rate-limit';
 export { limit } from './rate-limit';
 export async function sendVisitorCode(env:AppEnv,email:string,ip:string) {
+  if(!visitorRecipientAllowed(env,email))throw new Error('This email is not enabled for visitor testing. Use an approved test address or domain.');
   await limit(env,'send-ip:'+ip,10,3600000);
   const now=Date.now(),generation=token(),otp=code();
   await env.DB.prepare('INSERT INTO visitors(id,email_normalized,created_at) VALUES (?,?,?) ON CONFLICT(email_normalized) DO NOTHING').bind(crypto.randomUUID(),email,now).run();

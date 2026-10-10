@@ -1,12 +1,24 @@
 import { limit } from './rate-limit';
 import { normalizeEmail, type AppEnv } from './env';
+export function visitorRecipientAllowed(env:AppEnv,email:string):boolean {
+  const normalized=normalizeEmail(email);
+  const addresses=(env.MAIL_ALLOWED_RECIPIENTS??'').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
+  const domains=(env.VISITOR_EMAIL_DOMAINS??'').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
+  const domain=normalized.slice(normalized.lastIndexOf('@')+1);
+  return addresses.includes(normalized) || domains.includes(domain);
+}
 /** No caller-controlled subject/body endpoint. Never log provider payloads or credentials. */
-export async function sendMail(env: AppEnv, to: string, subject: string, text: string): Promise<void> {
-  normalizeEmail(to);
+export async function sendMail(env: AppEnv, to: string, subject: string, text: string, purpose: 'visitor' | 'owner' = 'visitor'): Promise<void> {
+  to=normalizeEmail(to);
   if (/[\r\n]/.test(subject)) throw new Error('Invalid email subject');
-  const allowed = (env.MAIL_ALLOWED_RECIPIENTS ?? '').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
-  // Development must use an explicit recipient allowlist. Empty means no delivery.
-  if (!allowed.includes(to)) throw new Error('Recipient not enabled for development delivery');
+  if(purpose==='owner') {
+    // Owner invitations/reset mail may use any domain, but only for an existing,
+    // active or invited owner. The public visitor API cannot select this purpose.
+    const owner=await env.DB.prepare("SELECT id FROM owner_accounts WHERE email_normalized=? AND status IN ('active','invited')").bind(to).first();
+    if(!owner)throw new Error('Owner recipient is not authorized');
+  } else if(!visitorRecipientAllowed(env,to)) {
+    throw new Error('This email is not enabled for visitor testing.');
+  }
   await limit(env,'mail-global',100,86400000);
   await limit(env,'mail-recipient:'+to,10,3600000);
   if (env.MAIL_MODE === 'test') {
