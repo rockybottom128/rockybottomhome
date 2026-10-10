@@ -1,0 +1,5 @@
+---
+export const prerender=false;
+import ViewingLayout from '../../layouts/ViewingLayout.astro';
+---
+<ViewingLayout title="Set owner password"><section class="intro"><h1 id="reset-heading">Set your<br /><em>owner password.</em></h1></section><section class="card login-card"><p id="reset-instructions">Use a unique password of 15–128 characters. Password managers and pasting are welcome.</p><form id="owner-reset"><label for="new-password">New password</label><input id="new-password" type="password" autocomplete="new-password" minlength="15" maxlength="128" required /><label for="confirm-password">Confirm password</label><input id="confirm-password" type="password" autocomplete="new-password" minlength="15" maxlength="128" required /><button class="button" type="submit">Save password</button></form><p id="reset-result" role="status"></p><a id="reset-signin" href="/owner/">Return to sign in</a></section><script>import '../../scripts/owner-reset';</script></ViewingLayout>

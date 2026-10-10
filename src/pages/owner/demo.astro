@@ -1,15 +1,9 @@
 ---
+export const prerender = false;
+import OwnerWorkflowDemo from '../../components/OwnerWorkflowDemo.astro';
 import ViewingLayout from '../../layouts/ViewingLayout.astro';
 ---
 <ViewingLayout title="Sample owner dashboard">
   <section class="intro"><p class="eyebrow">OWNER DASHBOARD · INTERACTIVE SAMPLE</p><h1>A warm welcome.<br /><em>A clear plan.</em></h1><p>Review requests and keep track of every visit. Changes below last only until this page reloads.</p></section>
-  <div id="owner-demo">
-    <div class="stats"><div class="card stat"><strong id="pending-count">3</strong>Pending</div><div class="card stat"><strong id="approved-count">0</strong>Approved</div><div class="card stat"><strong>0</strong>Live codes sent</div></div>
-    <div class="portal-grid"><section class="card"><p class="eyebrow">AUTOMATION</p><h2>You stay in control.</h2><p id="automation-state" role="status">Sample automation is paused.</p><button id="toggle-automation" class="button secondary" type="button">Enable sample automation</button><p class="hint">The live workflow will use owner-defined approval rules. Requests that need judgment go to owners.</p><div class="inset">After approval, timed access instructions can be sent once PIN installation is confirmed. Unverified agents and owner-coordinated visits receive no automatic keybox code.</div><h3>Service connections</h3><p class="muted">Password login · not connected<br />Database · schema only<br />Stripe · not connected<br />Gmail · not connected<br />igloohome Lockbox + Bridge · not connected</p></section>
-    <section class="card"><p class="eyebrow">UPCOMING REQUESTS · NOVEMBER 2026</p><h2>Ready for review.</h2><div id="booking-list"></div><p class="status" id="owner-result" role="status"></p></section></div>
-    <div class="two-col"><section class="card"><p class="eyebrow">AVAILABILITY</p><h2>Make room for a visit.</h2><a class="button secondary" href="/owner/availability">Manage availability and new requests →</a><p>Sample slots use Eastern Time. Live scheduling will account for daylight saving time and prevent overlapping reservations.</p></section>
-    <section class="card"><p class="eyebrow">OWNER ACCOUNTS</p><h2>Shared responsibility.</h2><p>All owners have the same dashboard permissions. These fictional controls do not create logins or send invitations.</p><ul id="owner-list"></ul><button id="add-owner" class="button secondary" type="button">Add sample owner</button><p id="owner-account-result" role="status"></p></section></div>
-    <div class="two-col"><section class="card"><p class="eyebrow">CONVERSATIONS</p><h2>Keep the conversation going.</h2><p><strong>Sample visitor:</strong> “Can we ask questions after our visit?”</p><p>Questions, feedback, and owner replies will remain attached to the booking.</p><button class="button secondary" id="sample-reply" type="button">Add sample reply</button><p id="reply-result" role="status"></p></section><section class="card"><p class="eyebrow">ACTIVITY</p><h2>A record of each change.</h2><ol class="log" id="activity-log"><li>Sample dashboard opened. No live data loaded.</li></ol></section></div>
-  </div>
-  <script>import '../../scripts/owner-demo';</script>
+  <OwnerWorkflowDemo showSampleOwners />
 </ViewingLayout>

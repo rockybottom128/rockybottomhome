@@ -1,5 +1,12 @@
 ---
+export const prerender=false;
 import ViewingLayout from '../../layouts/ViewingLayout.astro';
-import ViewingIntake from '../../components/ViewingIntake.astro';
+import VisitorEmail from '../../components/VisitorEmail.astro';
+import { runtime } from '../../server/runtime';
+import { configured } from '../../server/env';
+import { visitorDemoEnabled } from '../../server/settings';
+import { getVisitor } from '../../server/visitor-auth';
+const env=runtime(),enabled=configured(env,Astro.request) && await visitorDemoEnabled(env);
+const visitor=enabled?await getVisitor(env,Astro.request):null;
 ---
-<ViewingLayout title="Plan a viewing"><ViewingIntake source="public" /></ViewingLayout>
+<ViewingLayout title="Verify your email"><VisitorEmail enabled={enabled} email={visitor?.email_normalized} source="public" /></ViewingLayout>

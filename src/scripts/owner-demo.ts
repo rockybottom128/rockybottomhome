@@ -44,12 +44,12 @@ if (root) {
   let automation = false;
   document.querySelector('#toggle-automation')!.addEventListener('click', event => {
     automation = !automation; (event.currentTarget as HTMLButtonElement).textContent = automation ? 'Pause sample automation' : 'Enable sample automation';
-    document.querySelector('#automation-state')!.textContent = automation ? 'Sample automation enabled. Live integrations remain disconnected.' : 'Sample automation is paused.';
+    document.querySelector('#automation-state')!.textContent = automation ? 'Sample automation enabled. This does not run a live agent or send emails.' : 'Sample automation is paused.';
     log(`Sample automation ${automation ? 'enabled' : 'paused'}.`);
   });
   let owners = ['Sample Owner A', 'Sample Owner B']; let nextOwner = 3;
   function renderOwners() {
-    const list = document.querySelector('#owner-list')!; list.replaceChildren();
+    const list = root!.querySelector('#owner-list'); if (!list) return; list.replaceChildren();
     for (const owner of owners) {
       const li = document.createElement('li'); li.appendChild(document.createTextNode(`${owner} · equal permissions `));
       li.appendChild(button(`Remove ${owner}`, () => {
@@ -59,7 +59,7 @@ if (root) {
     }
     document.querySelector('#owner-account-result')!.textContent = owners.length === 1 ? 'The last active owner cannot be removed.' : '';
   }
-  document.querySelector('#add-owner')!.addEventListener('click', () => { owners.push(`Sample Owner ${nextOwner++}`); log('Fictional owner added; no invitation sent.'); renderOwners(); });
+  root.querySelector('#add-owner')?.addEventListener('click', () => { owners.push(`Sample Owner ${nextOwner++}`); log('Fictional owner added; no invitation sent.'); renderOwners(); });
   document.querySelector('#sample-reply')!.addEventListener('click', () => {
     document.querySelector('#reply-result')!.textContent = 'Sample owner reply: “Yes, use your private booking page to send questions and feedback.”'; log('Sample reply added to the conversation.');
   });

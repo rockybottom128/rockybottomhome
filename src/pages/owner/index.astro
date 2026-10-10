@@ -1,7 +1,15 @@
 ---
+export const prerender=false;
 import ViewingLayout from '../../layouts/ViewingLayout.astro';
+import { runtime } from '../../server/runtime';
+import { configured } from '../../server/env';
+import { getOwner } from '../../server/owner-auth';
+const env=runtime(),enabled=configured(env,Astro.request);
+if(enabled && await getOwner(env,Astro.request))return Astro.redirect('/owner/dashboard',303);
 ---
 <ViewingLayout title="Owner sign in">
-  <section class="intro"><p class="eyebrow">OWNER AREA</p><h1>Every visit.<br /><em>One place.</em></h1><p>Manage viewing requests, availability, and conversations.</p></section>
-  <section class="card login-card"><h2>Owner sign in</h2><p>Password-based owner accounts are planned. Live sign-in is not connected yet.</p><fieldset disabled><legend>Sign-in preview · do not enter credentials</legend><label for="owner-email">Email</label><input id="owner-email" type="email" placeholder="Your owner email" autocomplete="off" /><label for="owner-password">Password</label><input id="owner-password" type="password" placeholder="Your password" autocomplete="off" /><button class="button" type="button">Sign in</button><button class="text-button" type="button">Reset password</button></fieldset><p class="hint">Owners will have equal permissions. Invitations, password reset, and immediate session revocation will be required before launch.</p><a class="button secondary" href="/owner/demo">Explore the sample dashboard →</a><p class="hint">The sample dashboard is public and contains fictional records only. It is not a private owner account.</p></section>
+<section class="intro"><p class="eyebrow">OWNER AREA</p><h1>Your home.<br /><em>Your dashboard.</em></h1></section>
+<section class="card login-card"><h2>Owner sign in</h2>{!enabled && <p>Owner sign-in is awaiting secure server setup.</p>}
+<form id="owner-login"><fieldset disabled={!enabled}><label for="owner-email">Email</label><input id="owner-email" type="email" autocomplete="username" required maxlength="254" /><label for="owner-password">Password</label><input id="owner-password" type="password" autocomplete="current-password" required maxlength="128" /><button class="button" type="submit">Sign in</button><button class="text-button" id="owner-recover" type="button">Set or reset my password</button></fieldset></form><p id="owner-login-result" role="status"></p><p class="hint">Owner accounts are invitation-only. A setup or reset link will be emailed to your registered address.</p></section>
+<script>import '../../scripts/owner-login';</script>
 </ViewingLayout>

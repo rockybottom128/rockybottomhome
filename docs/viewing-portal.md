@@ -1,5 +1,7 @@
 # Viewing portal — 0.2 feature batch
 
+Historical scaffold/design record. The 0.3 branch adds server-side owner authentication and visitor email verification; see [current implementation and setup](auth-setup.md). The sample-only delivery and route descriptions below describe 0.2, not the current authentication branch. The agreed booking behavior remains the design for later integrations.
+
 ## Current delivery
 
 This is a local scaffold, not a launched booking service. Public pages contain only fictional examples. Intake, returning-booking and availability samples share fictional records in browser localStorage; the sample sign-in lasts one hour in sessionStorage. The older owner dashboard examples reset on reload. These are demonstrations, not authentication or a shared database; they do not collect real personal data, send email, call Stripe, or program a lock. No real password or upload fields are enabled. No D1/R2 resources have been provisioned and the migration has not been applied. Existing production routing, site architecture, and deployment configuration are unchanged.
