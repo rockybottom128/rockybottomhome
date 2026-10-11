@@ -7,6 +7,7 @@
 
 #rule-form input:disabled,#rule-form select:disabled{background:#eceee8;color:#6d766c;border-color:#d3d9ce;cursor:not-allowed;opacity:.65}
 .period-actions{display:inline-flex;gap:16px;flex-wrap:wrap;margin-left:10px}
+#shared-activity .log{padding-inline-start:3em}
 #shared-activity .log li{padding:10px 0;border-bottom:1px solid #d3d9ce;overflow-wrap:anywhere}
 #shared-activity .log p{margin:4px 0}
 
