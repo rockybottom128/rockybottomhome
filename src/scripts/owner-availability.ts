@@ -49,9 +49,10 @@ function render(){
  for(const slot of slots){const b=makeButton(`${timeRange(slot.start,slot.end)} · Block`,()=>{void change('add',undefined,{kind:'blocked',local_day:day,weekday:null,start_minute:Number(slot.start.slice(0,2))*60,end_minute:Number(slot.end.slice(0,2))*60});});b.dataset.mutation='';tiles.appendChild(b);}
  const list=el('rule-list');list.replaceChildren();
  for(const p of state?.periods??[]){
-  const row=document.createElement('li');row.textContent=`${p.kind==='available'?'Available':'Blocked'} · ${p.local_day??(p.weekday===-1?'Every day':`Every ${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][p.weekday!]}`)} · ${timeRange(wallTime(p.start_minute),wallTime(p.end_minute))} `;
+  const allDayBlock=p.kind==='blocked'&&p.start_minute===0&&p.end_minute===1440;
+  const row=document.createElement('li');row.textContent=`${p.kind==='available'?'Available':'Blocked'} · ${p.local_day??(p.weekday===-1?'Every day':`Every ${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][p.weekday!]}`)}${allDayBlock?' (all day)':` · ${timeRange(wallTime(p.start_minute),wallTime(p.end_minute))}`} `;
   const edit=makeButton('Edit',()=>{if(pending)return;editing=p.id;set('rule-kind',p.kind);set('rule-date',p.local_day??day);set('rule-scope',p.local_day?'date':'weekly');set('rule-weekday',String(p.weekday??-1));set('rule-start',wallTime(p.start_minute));set('rule-end',wallTime(p.end_minute));el('period-heading').textContent=`Edit ${p.local_day??'weekly range'}`;el('save-period').textContent='Save changes';scopeFields();el('rule-kind').focus();},'text-button');edit.dataset.mutation='';
-  const remove=makeButton('Remove',()=>{void change('remove',p.id);},'text-button');remove.dataset.mutation='';const actions=document.createElement('span');actions.className='period-actions';actions.appendChild(edit);actions.appendChild(document.createTextNode(' '));actions.appendChild(remove);row.appendChild(actions);list.appendChild(row);
+  const remove=makeButton(allDayBlock?'Remove Block':'Remove',()=>{void change('remove',p.id);},'text-button');remove.dataset.mutation='';const actions=document.createElement('span');actions.className='period-actions';if(!allDayBlock){actions.appendChild(edit);actions.appendChild(document.createTextNode(' '));}actions.appendChild(remove);row.appendChild(actions);list.appendChild(row);
  }
  if(state&&!state.periods.length)list.textContent='No periods configured. Visitors have no available slots.';
  lock();
