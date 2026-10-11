@@ -44,7 +44,7 @@ try {
  assert.equal(denied.status,400,'Public callers cannot bypass visitor restrictions by requesting owner mail');
  assert.equal(db.prepare("SELECT COUNT(*) AS n FROM visitors WHERE email_normalized='blocked@notallowed.test'").get().n,0,'Rejected recipient must not create a visitor record');
  assert.match(ownerCookie,/rb-owner/);assert.ok(login.headers.getSetCookie().some(c=>/httponly/i.test(c)));
- const dashboard=await fetch(base+'/owner/dashboard',{headers:{cookie:ownerCookie}});assert.equal(dashboard.status,200);const html=await dashboard.text();assert.match(html,/PRIVATE OWNER DASHBOARD/);assert.match(html,/INTERACTIVE WORKFLOW PREVIEW/);assert.match(html,/id="booking-list"/);assert.doesNotMatch(html,/id="add-owner"/);assert.equal(dashboard.headers.get('cache-control'),'no-store');
+ const dashboard=await fetch(base+'/owner/dashboard',{headers:{cookie:ownerCookie}});assert.equal(dashboard.status,200);const html=await dashboard.text();assert.match(html,/PRIVATE OWNER DASHBOARD/);assert.match(html,/INTERACTIVE WORKFLOW PREVIEW/);assert.match(html,/id="selected-showings"/);assert.match(html,/id="shared-activity"/);assert.doesNotMatch(html,/id="booking-list"/);assert.doesNotMatch(html,/id="activity-log"/);assert.doesNotMatch(html,/id="add-owner"/);assert.equal(dashboard.headers.get('cache-control'),'no-store');
  assert.ok(html.indexOf('id="shared-availability"')<html.indexOf('id="workflow-heading"'));
  assert.ok(html.indexOf('id="shared-activity"')<html.indexOf('id="workflow-heading"'));
  assert.match(html,/Owner password set or reset/);
