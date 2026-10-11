@@ -9,6 +9,6 @@
   },
   "change": {
     "level": "feature",
-    "reason": "Persist shared availability and viewing requests with owner review, booking email and database-managed visitor access"
+    "reason": "Persist availability and viewing requests with owner review, booking email and owner-managed visitor email filters"
   }
 }

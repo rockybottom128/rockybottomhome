@@ -118,3 +118,7 @@ The new `VISITOR_EMAIL_ADDRESSES` private binding was provisioned on shared dev 
 ## Database-backed visitor allowlist (migration 0008)
 
 The next candidate replaces ongoing environment-based visitor permission checks with owner-managed D1 records. Existing per-environment domains/private exceptions import exactly once; afterward the dashboard list is authoritative, including when empty. Owner authentication remains independent. See [visitor allowlist](visitor-allowlist.md) for editing, effects on existing sessions/bookings, audit and release preparation. Earlier environment configuration sections describe the import sources, not overrides for an initialized database.
+
+## Visitor email filter — 2026-10-11 candidate
+
+Migration 0009 preserves existing Allow entries and adds an empty Block list plus Global email filter, initially On. The visitor enable switch wins first; then any Allow match wins; then Block matches deny; unmatched email follows the Global filter (On denies, Off permits). Verification remains mandatory. Both lists and the slider are owner-managed, revision-protected and audited. See [visitor email rules](visitor-allowlist.md) for precedence, initialization, migration and rollback review. Shared-dev publication applies pending 0008/0009; production preparation remains separately authorized.

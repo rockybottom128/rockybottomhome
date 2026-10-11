@@ -12,7 +12,7 @@ const handle:APIRoute=async({request})=>{
   return json(input?await changeAllowlist(env,owner.id,input):await readAllowlist(env));
  }catch(error){
   if(error instanceof AllowlistConflict)return json({error:error.message},409);
-  if(error instanceof Error&&/^(Enter |Invalid |That domain|Request too large)/.test(error.message))return json({error:error.message},400);
+  if(error instanceof Error&&/^(Enter |Choose |Remove the entry|Invalid |That domain|Request too large)/.test(error.message))return json({error:error.message},400);
   return json({error:'Unable to confirm the change. Reload the list before trying again.'},503);
  }
 };

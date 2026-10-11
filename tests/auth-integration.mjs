@@ -147,6 +147,24 @@ try {
  accessList=await readList();
  assert.equal((await post('/api/owner/visitor-allowlist',{action:'add',kind:'email',value:'visitor@example.com',revision:accessList.revision},ownerCookie)).status,200);
  assert.equal((await fetch(slotPath,{headers:{cookie:visitorCookie}})).status,200);
+ // Global filter and block mutations use the same private API; master switch wins.
+ const policyChange=async change=>{const state=await readList();const r=await post('/api/owner/visitor-allowlist',{...change,revision:state.revision},ownerCookie);assert.equal(r.status,200);return r.json();};
+ const filterInput={action:'filter',globalFilter:false,revision:(await readList()).revision};
+ assert.equal((await post('/api/owner/visitor-allowlist',filterInput,visitorCookie)).status,401);
+ assert.equal((await post('/api/owner/visitor-allowlist',filterInput,ownerCookie,'https://attacker.invalid')).status,400);
+ await policyChange({action:'filter',globalFilter:false});
+ const withBlock=await policyChange({action:'add',policy:'block',kind:'domain',value:'example.com'});
+ assert.equal((await fetch(slotPath,{headers:{cookie:visitorCookie}})).status,200,'Specific Allow overrides blocked domain');
+ await post('/api/owner/visitor-demo',{enabled:false},ownerCookie);
+ assert.notEqual((await fetch(slotPath,{headers:{cookie:visitorCookie}})).status,200,'Master switch wins over Allow and open filter');
+ await post('/api/owner/visitor-demo',{enabled:true},ownerCookie);
+ const allow=withBlock.entries.find(e=>e.policy==='allow'&&e.value==='visitor@example.com');
+ await policyChange({action:'remove',id:allow.id});
+ assert.equal((await fetch(slotPath,{headers:{cookie:visitorCookie}})).status,401,'Block excludes existing session with filter Off');
+ await policyChange({action:'remove',id:withBlock.entries.find(e=>e.policy==='block').id});
+ assert.equal((await fetch(slotPath,{headers:{cookie:visitorCookie}})).status,200,'Filter Off permits unmatched verified visitor');
+ await policyChange({action:'add',policy:'allow',kind:'email',value:'visitor@example.com'});
+ await policyChange({action:'filter',globalFilter:true});
  const ownRequests=await (await fetch(base+'/api/visitor/bookings',{headers:{cookie:visitorCookie}})).json();assert.equal(ownRequests.bookings[0].id,booking.id);assert.ok(!('profile_snapshot' in ownRequests.bookings[0]));
  assert.equal((await post('/api/owner/bookings',{id:booking.id,revision:1,action:'approve',acknowledge_simulation:true},visitorCookie)).status,401);
  assert.equal((await post('/api/owner/bookings',{id:booking.id,revision:1,action:'approve'},ownerCookie)).status,400);

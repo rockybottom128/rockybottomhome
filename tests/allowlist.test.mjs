@@ -35,3 +35,38 @@ test('competing owners commit one edit with one audit, and invalid import fails 
  assert.equal(db.prepare('SELECT COUNT(*) n FROM visitor_allowlist_audit').get().n,2);
  }finally{db.close();}
 });
+test('allow wins over all blocks; filter defaults closed and persists with audited CAS',async()=>{
+ const {db,env}=fixture();try{
+ db.exec("INSERT INTO owner_accounts VALUES ('a','a@example.com',NULL,'active',0),('b','b@example.com',NULL,'active',0),('gone','gone@example.com',NULL,'removed',0)");
+ let s=await readAllowlist(env);assert.equal(s.globalFilter,true);
+ const change=async input=>s=await changeAllowlist(env,'a',{revision:s.revision,...input});
+ assert.equal(await allowedVisitorEmail(env,'unknown@other.test'),false);
+ await change({action:'add',policy:'block',kind:'domain',value:'example.com'});
+ await change({action:'add',policy:'allow',kind:'email',value:'a@example.com'});
+ assert.equal(await allowedVisitorEmail(env,'a@example.com'),true);
+ assert.equal(await allowedVisitorEmail(env,'b@example.com'),false);
+ await change({action:'add',policy:'block',kind:'email',value:'a@example.com'});
+ assert.equal(await allowedVisitorEmail(env,'a@example.com'),true);
+ await change({action:'add',policy:'allow',kind:'domain',value:'example.com'});
+ assert.equal(await allowedVisitorEmail(env,'b@example.com'),true);
+ await change({action:'filter',globalFilter:false});
+ assert.equal((await readAllowlist(env)).globalFilter,false);
+ assert.equal(await allowedVisitorEmail(env,'unknown@other.test'),true);
+ await change({action:'add',policy:'block',kind:'email',value:'unknown@other.test'});
+ assert.equal(await allowedVisitorEmail(env,'unknown@other.test'),false);
+ const blocked=s.entries.find(e=>e.policy==='block'&&e.value==='unknown@other.test');
+ await change({action:'update',id:blocked.id,kind:'email',value:'changed@other.test'});
+ assert.equal(await allowedVisitorEmail(env,'unknown@other.test'),true);
+ assert.equal(await allowedVisitorEmail(env,'changed@other.test'),false);
+ await change({action:'remove',id:blocked.id});
+ assert.equal(await allowedVisitorEmail(env,'changed@other.test'),true);
+ await assert.rejects(changeAllowlist(env,'gone',{action:'filter',revision:s.revision,globalFilter:true}),AllowlistConflict);
+ await assert.rejects(changeAllowlist(env,'a',{action:'filter',revision:s.revision,globalFilter:'false'}));
+ const outcomes=await Promise.allSettled([
+ changeAllowlist(env,'a',{action:'filter',revision:s.revision,globalFilter:true}),
+ changeAllowlist(env,'b',{action:'add',revision:s.revision,policy:'block',kind:'domain',value:'other.test'})]);
+ assert.equal(outcomes.filter(r=>r.status==='fulfilled').length,1);
+ const audit=db.prepare("SELECT actor_id,before_json,after_json FROM visitor_allowlist_audit WHERE after_json LIKE '%Global email filter Off%'").get();
+ assert.equal(audit.actor_id,'a');assert.match(audit.before_json,/On/);
+ }finally{db.close();}
+});
