@@ -1,0 +1,11 @@
+---
+export const prerender=false;
+import ViewingLayout from '../layouts/ViewingLayout.astro';
+import Messages from '../components/Messages.astro';
+import {runtime} from '../server/runtime';
+const local=['localhost','127.0.0.1','[::1]'];
+const configuredOrigin=runtime().APP_ORIGIN;
+if(!local.includes(Astro.url.hostname)||(configuredOrigin&&!local.includes(new URL(configuredOrigin).hostname)))return new Response('Not found',{status:404});
+Astro.response.headers.set('Cache-Control','no-store');
+---
+<ViewingLayout title="Local messaging preview"><section class="intro"><p class="eyebrow">0.4.1 · LOCAL REVIEW</p><h1>A shared place<br />for every conversation.</h1><p>Explore the owner inbox, then switch to the visitor view to try both sides of a thread.</p></section><div class="stats"><div class="card stat"><strong>3</strong>Sample visitors</div><a class="card stat" href="#messages"><strong data-message-count>2</strong>Conversations needing reply</a></div><Messages owner demo /></ViewingLayout>

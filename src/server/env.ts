@@ -28,17 +28,22 @@ export const noStore = { 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-ref
 export function json(value: unknown, status = 200, extra: Record<string,string> = {}) {
   return new Response(JSON.stringify(value), { status, headers: { ...noStore, 'Content-Type': 'application/json', ...extra } });
 }
-export async function body(request: Request, env: AppEnv): Promise<Record<string,unknown>> {
+export async function body(request: Request, env: AppEnv, maxBytes = 4096): Promise<Record<string,unknown>> {
   if (request.method !== 'POST' || request.headers.get('origin') !== env.APP_ORIGIN
-    || !request.headers.get('content-type')?.startsWith('application/json')) throw new Error('Invalid request.');
-  return readJson(request);
+    || !request.headers.get('content-type')?.startsWith('application/json')) {
+    // Consume a bounded rejected body so the local Worker proxy can reuse its connection.
+    // Validation still fails before any authenticated operation or write.
+    try { await readJson(request, maxBytes); } catch {}
+    throw new Error('Invalid request.');
+  }
+  return readJson(request, maxBytes);
 }
 
-export async function readJson(request: Pick<Request, 'body'>): Promise<Record<string,unknown>> {
+export async function readJson(request: Pick<Request, 'body'>, maxBytes = 4096): Promise<Record<string,unknown>> {
   const reader=request.body?.getReader();
   if(!reader)throw new Error('Invalid request.');
   const chunks:Uint8Array[]=[];let length=0;
-  while(true){const {done,value}=await reader.read();if(done)break;length+=value.length;if(length>4096){await reader.cancel();throw new Error('Request too large.');}chunks.push(value);}
+  while(true){const {done,value}=await reader.read();if(done)break;length+=value.length;if(length>maxBytes){await reader.cancel();throw new Error('Request too large.');}chunks.push(value);}
   const bytes=new Uint8Array(length);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.length;}
   const parsed=JSON.parse(new TextDecoder().decode(bytes));
   if(!parsed||typeof parsed!=='object'||Array.isArray(parsed))throw new Error('Invalid request.');

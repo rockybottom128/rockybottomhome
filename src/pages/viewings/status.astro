@@ -13,4 +13,4 @@ const visitor=enabled?await getVisitor(env,Astro.request):null;
 if(!visitor)return Astro.redirect('/viewings/',303);
 const bookings=await visitorBookings(env,visitor.id);
 ---
-<ViewingLayout title="Email verified"><VisitorEmail enabled={enabled} email={visitor.email_normalized} source={Astro.url.searchParams.get('source')==='mls'?'mls':'public'} /><section class="card"><h2>My viewing requests</h2><p>These are real saved requests. A pending request holds its time, but the visit requires owner approval. Refresh to see status changes.</p><BookingRequests bookings={bookings} /></section></ViewingLayout>
+<ViewingLayout title="Email verified"><VisitorEmail enabled={enabled} email={visitor.email_normalized} source={Astro.url.searchParams.get('source')==='mls'?'mls':'public'} /><section class="card"><h2>My viewing requests</h2><a class="button secondary" href="/viewings/messages/">Open my messages →</a><p>These are real saved requests. A pending request holds its time, but the visit requires owner approval. Refresh to see status changes.</p><BookingRequests bookings={bookings} /></section></ViewingLayout>

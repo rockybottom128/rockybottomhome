@@ -15,6 +15,10 @@ Before the official launch, use `0.n1.n2.n3`. This policy starts at `0.1.0.0`; e
 
 Choose the highest applicable category in a mixed batch. A photo change that also changes gallery behavior is an update. A security repair is an update even if only a lockfile changes. When uncertain between two levels, choose the higher and explain why; do not ask the owner to manage numbering. Automated checks verify the arithmetic and declared rationale; agents and reviewers remain responsible for truthful classification of intent.
 
+## Owner-directed 0.4 messaging increment
+
+For the visitor messaging batch, the owner requested that the release stay within 0.4. Prepare it as `update` (0.4.1.0 from 0.4.0.0), completing the existing dashboard conversation workflow. This is an explicit exception for this batch; the general feature classification remains unchanged.
+
 ## Agent procedure
 
 1. Fetch current main, preserve local work, and start a descriptive branch. Read this policy.

@@ -206,3 +206,7 @@ Production remains separately authorized: capture the database backup/recovery p
 ## Visitor email filter — 2026-10-11 candidate
 
 Migration 0009 preserves existing Allow entries and adds an empty Block list plus Global email filter, initially On. The visitor enable switch wins first; then any Allow match wins; then Block matches deny; unmatched email follows the Global filter (On denies, Off permits). Verification remains mandatory. Both lists and the slider are owner-managed, revision-protected and audited. See [visitor email rules](visitor-allowlist.md) for precedence, initialization, migration and rollback review. Shared-dev publication applies pending 0008/0009; production preparation remains separately authorized.
+
+## Website conversations migration 0010 — local candidate
+
+Additive migration 0010 creates shared conversation threads and entries. It preserves all existing accounts, bookings, settings and email history; no mail is queued by migration or message sends. Apply before the candidate code, using separately authorized remote preparation and the normal backup/recovery review. It is applied only to local preview during this batch. See [conversation behavior and local review](conversations.md) for access rules, revision handling, rollback and remaining notification work.
