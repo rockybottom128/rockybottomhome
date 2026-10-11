@@ -1,84 +1,54 @@
 import type {Slot} from '../lib/viewings/availability';
-import {post} from './auth-request';
-import { timeLabel, timeRange, dayKey, visitorDays, challengeValid } from '../lib/viewings/calendar';
-import { readSample, saveSample, label, el, makeButton, drawCalendar } from './viewing-sample-store';
-const root=document.querySelector<HTMLElement>('#intake');
-if(root) {
- const verifiedDemo=root.dataset.verifiedDemo==='true';
- async function demoAllowed(){
-  if(!verifiedDemo)return true;
-  try{await post('/api/visitor/demo-access',{});return true;}
-  catch{root!.hidden=true;location.assign('/viewings/');return false;}
- }
- if(verifiedDemo){
-  el('email-form').hidden=true;
-  el('intake-form').hidden=false;
-  el('intake-title').textContent='Simulate identity verification.';
-  sessionStorage.setItem('rb-sample-session',String(Date.now()+3600000));
-  setInterval(()=>{void demoAllowed();},15000);
- }
- const role=document.getElementById('visitor-role') as unknown as HTMLSelectElement;
- const form=el<HTMLFormElement>('intake-form'), step=el('slot-step'), request=el<HTMLButtonElement>('request-sample');
- const attending=el<HTMLInputElement>('agent-attending'); let day='',time='',end='',code='',expires=0,attempts=0,consumed=false;
- function sendCode() {
-  // Preview only. Production generation, hashing, delivery and checks must all be server-side.
-  const data=new Uint32Array(1); do { crypto.getRandomValues(data); } while(data[0]>=4200000000);
-  const previous=code; code=String(data[0]%100000000).padStart(8,'0');if(code===previous)code=String((Number(code)+1)%100000000).padStart(8,'0');
-  expires=Date.now()+10*60000;attempts=0;consumed=false;
-  const state=readSample();state.profile ||= {id:'sample-visitor',role:'',verified:false};saveSample(state);
-  el('email-form').hidden=true;el('code-form').hidden=false;
-  el('code-sent').textContent='Check your email and enter the latest code. In this preview no email is sent; use the sample code below. A resend replaces the previous code.';
-  el('sample-code').textContent=`Sample inbox: ${code} · expires in 10 minutes`;
-  el('code-result').textContent='';el<HTMLInputElement>('email-code').value='';el('email-code').focus();
- }
- el('email-form').addEventListener('submit',e=>{e.preventDefault();sendCode();});el('resend-code').addEventListener('click',sendCode);
- el('code-form').addEventListener('submit',e=>{
-  e.preventDefault();const entered=el<HTMLInputElement>('email-code').value;
-  if(!challengeValid(code,entered,expires,attempts,consumed,Date.now())){attempts++;el('code-result').textContent=attempts>=5?'Too many attempts. Request a new sample code.':'Invalid or expired code. Use the latest code or resend.';return;}
-  consumed=true;sessionStorage.setItem('rb-sample-session',String(Date.now()+3600000));el('code-form').hidden=true;
-  if(new URLSearchParams(location.search).get('next')==='bookings'){location.assign('/viewings/status');return;}
-  const profile=readSample().profile;if(profile?.verified){role.value=profile.role;updateRole();showSlots();}else{el('intake-title').textContent='Tell us about your visit.';form.hidden=false;role.focus();}
- });
- function updateRole(){const agent=role.value==='agent';el('agent-fields').hidden=!agent;el('verification-explanation').textContent=agent?'Sample license and registration business-email checks will be treated as successful. In the live service unresolved checks go to owners; verified agents can skip Stripe.':'Stripe will require government ID and a matching selfie. We retain the result and private reference selfie for 90 days, not copies of ID images. This preview simulates success without contacting Stripe.';}
- role.addEventListener('change',updateRole);updateRole();
- function updateButton(){request.disabled=loading||confirming||!time||(role.value==='agent'&&!attending.checked);el('booking-review').hidden=true;}
- attending.addEventListener('change',updateButton);
- function showSlots(){el('intake-title').textContent='Choose your viewing.';form.hidden=true;step.hidden=false;const agent=role.value==='agent';el('attending-wrap').hidden=!agent;el('verification-badge').textContent=agent?'Sample agent credentials verified · Stripe waived':'Sample Stripe ID + selfie verified · owner-coordinated visit';day=dayKey();time='';renderCalendar();void renderSlots();}
- form.addEventListener('submit',async e=>{e.preventDefault();if(!await demoAllowed())return;const state=readSample();state.profile={id:'sample-visitor',role:role.value,verified:true};saveSample(state);showSlots();});
- function renderCalendar(){const days=visitorDays(dayKey());el('calendar-heading').textContent=`Rolling ${days.length/7}-week availability`;el('calendar-range').textContent=`${label(days[0])} – ${label(days.at(-1)!)} · Sunday–Saturday`;drawCalendar(el('visitor-calendar'),days,day,d=>{if(confirming)return;day=d;time='';renderCalendar();renderSlots();updateButton();},d=>d<dayKey());}
- let slots:Slot[]=[],loading=false,slotGeneration=0,confirming=false;
- async function fetchSlots(selectedDay:string):Promise<Slot[]> {
-  const response=await fetch(`/api/visitor/availability?from=${selectedDay}&to=${selectedDay}`,{credentials:'same-origin',cache:'no-store'});
-  const data=await response.json() as {slots:Slot[];error?:string};
-  if(!response.ok)throw Error(data.error||'Unable to load availability.');
-  return data.slots;
- }
- async function renderSlots(){
-  const own=++slotGeneration;slots=[];loading=true;updateButton();el('slot-list').replaceChildren();el('selected-day').textContent=label(day);el('slot-empty').textContent='Loading shared availability…';
-  try{const loaded=await fetchSlots(day);if(own!==slotGeneration)return;slots=loaded;
-   if(!slots.some(s=>s.start===time&&s.end===end))time='';
-   for(const t of slots){const b=makeButton(timeRange(t.start,t.end),()=>{time=t.start;end=t.end;drawSlots();updateButton();});b.setAttribute('aria-pressed',String(time===t.start));el('slot-list').appendChild(b);}
-   el('slot-empty').textContent=slots.length?'':'No available times on this day. Please choose another date.';
-  }catch(error){if(own!==slotGeneration)return;time='';el('slot-empty').textContent=(error as Error).message;const retry=makeButton('Retry availability',()=>{void renderSlots();});el('slot-list').appendChild(retry);}
-  finally{if(own===slotGeneration){loading=false;updateButton();}}
- }
- function drawSlots(){for(const b of el('slot-list').querySelectorAll('button'))b.setAttribute('aria-pressed',String(b.textContent===timeRange(time,end)));}
- request.addEventListener('click',()=>{if(loading||confirming||!time)return;el('booking-review').hidden=false;el('review-summary').textContent=`Simulated selection: ${label(day,time)}–${timeLabel(end)} Eastern. No reservation, approval, email, or access code will be created.`;});
- el('confirm-booking').addEventListener('click',async()=>{
-  if(confirming||loading||!time)return;
-  confirming=true;const button=el<HTMLButtonElement>('confirm-booking');button.disabled=true;
-  const selected={day,time,end};
-  try{
-   if(!await demoAllowed())return;
-   const latest=await fetchSlots(selected.day);
-   const slot=latest.find(s=>s.start===selected.time&&s.end===selected.end);
-   const state=readSample();
-   if(!slot||!state.profile?.verified||(role.value==='agent'&&!attending.checked))throw Error('This time is no longer available. Choose another time.');
-   state.bookings.push({id:crypto.randomUUID(),day:selected.day,time:selected.time,end:selected.end,start:slot.startsAt,mode:role.value==='agent'?'agent_private':'owner_coordinated',status:'requested',visitorId:state.profile.id,source:root!.dataset.source||'public',access:'none',revision:1,feedback:[]});saveSample(state);
-   el('request-result').textContent=`Simulated request saved in this browser: ${label(selected.day,selected.time)}. No time is reserved, no real request was submitted, and no email or access code was sent.`;
-   el('request-result').focus();el('manage-bookings').hidden=false;
-  }catch(error){el('request-result').textContent=(error as Error).message;}
-  finally{confirming=false;button.disabled=false;time='';updateButton();if(day)void renderSlots();}
- });
- el('restart').addEventListener('click',()=>{el('intake-title').textContent='Tell us about your visit.';form.hidden=false;step.hidden=true;time='';attending.checked=false;updateButton();role.focus();});
+import type {VisitorProfile} from '../server/visitor-profile';
+import {timeRange,dayKey,visitorDays} from '../lib/viewings/calendar';
+import {label,el,makeButton,drawCalendar} from './viewing-sample-store';
+const root=el('intake');
+const field=(id:string)=>el<HTMLInputElement>(id);
+let profile:VisitorProfile|null=null,profileRevision=0,day=dayKey(),selected:Slot|null=null,requestKey='',loading=false,saving=false,submitting=false,generation=0;
+async function api(path:string,data?:Record<string,unknown>){
+ const r=await fetch(path,{method:data?'POST':'GET',credentials:'same-origin',cache:'no-store',...(data?{headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}:{})});
+ const result=await r.json() as {error?:string;profile?:VisitorProfile|null;slots?:Slot[];id?:string;status?:string};
+ if(!r.ok){if(r.status===401||r.status===403){location.assign('/viewings/');}throw Error(result.error||'Unable to complete this request.');}
+ return result;
 }
+function updateRole(){const agent=field('visitor-role').value==='agent';el('agent-fields').hidden=!agent;for(const id of ['agent-name','license-state','license-number','brokerage']){field(id).required=agent;field(id).disabled=!agent;}}
+function buttons(){el<HTMLButtonElement>('review-request').disabled=loading||submitting||!selected||(profile?.role==='agent'&&!field('agent-attending').checked);el<HTMLButtonElement>('confirm-booking').disabled=submitting;el<HTMLButtonElement>('restart').disabled=submitting;}
+async function loadProfile(){
+ if(saving)return;saving=true;el<HTMLFieldSetElement>('profile-fields').disabled=true;el<HTMLButtonElement>('reload-profile').disabled=true;
+ try{
+  const data=await api('/api/visitor/profile');profile=data.profile??null;profileRevision=profile?.revision??0;
+  if(profile){field('visitor-name').value=profile.display_name;field('visitor-role').value=profile.role;field('agent-name').value=profile.licensed_name;field('license-state').value=profile.jurisdiction;field('license-number').value=profile.license_number;field('brokerage').value=profile.brokerage;}
+  updateRole();el('profile-result').textContent=profile?'Saved details loaded. Review them before continuing.':'Enter your details to continue.';el<HTMLFieldSetElement>('profile-fields').disabled=false;
+ }catch(e){el('profile-result').textContent=(e as Error).message;}finally{saving=false;el<HTMLButtonElement>('reload-profile').disabled=false;}
+}
+field('visitor-role').addEventListener('change',updateRole);
+el('reload-profile').addEventListener('click',()=>void loadProfile());
+el('intake-form').addEventListener('submit',async e=>{
+ e.preventDefault();if(saving)return;saving=true;el<HTMLFieldSetElement>('profile-fields').disabled=true;el('profile-result').textContent='Saving…';
+ try{
+  const result=await api('/api/visitor/profile',{revision:profileRevision,role:field('visitor-role').value,display_name:field('visitor-name').value,licensed_name:field('agent-name').value,jurisdiction:field('license-state').value,license_number:field('license-number').value,brokerage:field('brokerage').value});
+  profile=result.profile!;profileRevision=profile.revision;el('intake-form').hidden=true;el('slot-step').hidden=false;el('intake-title').textContent='Request a viewing.';el('verification-badge').textContent='Email verified · '+(profile.role==='agent'?'Agent validation: simulated pass':'Identity validation: simulated pass');el('attending-wrap').hidden=profile.role!=='agent';day=dayKey();selected=null;draw();void loadSlots();
+ }catch(error){el('profile-result').textContent=(error as Error).message;}finally{saving=false;el<HTMLFieldSetElement>('profile-fields').disabled=false;}
+});
+function draw(){const days=visitorDays(dayKey());el('calendar-heading').textContent=`Rolling ${days.length/7}-week availability`;el('calendar-range').textContent=`${label(days[0])} – ${label(days.at(-1)!)} · Eastern Time`;drawCalendar(el('visitor-calendar'),days,day,d=>{if(submitting)return;day=d;selected=null;requestKey='';el('booking-review').hidden=true;draw();void loadSlots();},d=>d<dayKey());}
+async function loadSlots(){
+ const own=++generation;loading=true;selected=null;buttons();el('booking-review').hidden=true;el('selected-day').textContent=label(day);el('slot-list').replaceChildren();el('slot-empty').textContent='Loading shared availability…';
+ try{const data=await api(`/api/visitor/availability?from=${day}&to=${day}`);if(own!==generation)return;
+  for(const slot of data.slots??[]){const b=makeButton(timeRange(slot.start,slot.end),()=>{if(submitting)return;selected=slot;requestKey=crypto.randomUUID();el('booking-review').hidden=true;el('slot-list').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));buttons();});b.setAttribute('aria-pressed','false');el('slot-list').appendChild(b);}
+  el('slot-empty').textContent=data.slots?.length?'':'No available times on this day.';
+ }catch(error){if(own!==generation)return;el('slot-empty').textContent=(error as Error).message;el('slot-list').appendChild(makeButton('Retry availability',()=>void loadSlots()));}
+ finally{if(own===generation){loading=false;buttons();}}
+}
+field('agent-attending').addEventListener('change',()=>{el('booking-review').hidden=true;buttons();});
+el('review-request').addEventListener('click',()=>{if(!selected||loading||submitting)return;el('booking-review').hidden=false;el('review-summary').textContent=`${label(selected.day)} · ${timeRange(selected.start,selected.end)} Eastern. Submit to hold this time pending owner approval. Identity and agent checks are simulated. No booking email or access code is issued; check My requests for updates.`;});
+el('confirm-booking').addEventListener('click',async()=>{
+ if(submitting||!selected)return;submitting=true;buttons();el('request-result').textContent='Submitting request…';
+ try{
+  const saved=await api('/api/visitor/bookings',{action:'request',day:selected.day,time:selected.start,request_key:requestKey,agent_attending:field('agent-attending').checked,source:root.dataset.source});
+  el('request-result').textContent=saved.status==='requested'?'Request saved. This time is held pending owner approval. View My requests for the current status; your visit is not yet approved.':`This request is already saved with status: ${saved.status}. View My requests for details.`;el('request-result').focus();el('booking-review').hidden=true;selected=null;void loadSlots();
+ }catch(error){el('request-result').textContent=(error as Error).message+' Check My requests before retrying. A retry of this selection will not create a duplicate.';}
+ finally{submitting=false;buttons();}
+});
+el('restart').addEventListener('click',()=>{if(submitting)return;el('slot-step').hidden=true;el('intake-form').hidden=false;el('intake-title').textContent='Review your details.';selected=null;void loadProfile();});
+setInterval(()=>{void api('/api/visitor/demo-access',{}).catch(()=>{});},15000);
+void loadProfile();

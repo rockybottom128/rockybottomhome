@@ -1,6 +1,8 @@
 ---
 export const prerender=false;
 import ViewingLayout from '../../layouts/ViewingLayout.astro';
+import BookingRequests from '../../components/BookingRequests.astro';
+import {visitorBookings} from '../../server/bookings';
 import VisitorEmail from '../../components/VisitorEmail.astro';
 import { runtime } from '../../server/runtime';
 import { configured } from '../../server/env';
@@ -9,5 +11,6 @@ import { getVisitor } from '../../server/visitor-auth';
 const env=runtime(),enabled=configured(env,Astro.request) && await visitorDemoEnabled(env);
 const visitor=enabled?await getVisitor(env,Astro.request):null;
 if(!visitor)return Astro.redirect('/viewings/',303);
+const bookings=await visitorBookings(env,visitor.id);
 ---
-<ViewingLayout title="Email verified"><VisitorEmail enabled={enabled} email={visitor.email_normalized} source="public" /></ViewingLayout>
+<ViewingLayout title="Email verified"><VisitorEmail enabled={enabled} email={visitor.email_normalized} source={Astro.url.searchParams.get('source')==='mls'?'mls':'public'} /><section class="card"><h2>My viewing requests</h2><p>These are real saved requests. A pending request holds its time, but the visit requires owner approval. Refresh to see status changes.</p><BookingRequests bookings={bookings} /></section></ViewingLayout>

@@ -1,0 +1,14 @@
+---
+interface Props { bookings:Array<{id:string;starts_at:number;ends_at:number;status:string;revision:number;validation_status:string;cancellation_reason:string;email_normalized?:string;profile_snapshot?:string|null}>; owner?:boolean }
+const {bookings,owner=false}=Astro.props;
+const date=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',dateStyle:'medium',timeStyle:'short'});
+function details(raw?:string|null):string {
+ try{const p=JSON.parse(raw??'null');if(!p)return '';return [p.display_name,p.role==='agent'?'Agent':'Prospective buyer',...(p.role==='agent'?[p.licensed_name,p.jurisdiction,p.license_number,p.brokerage]:[])].filter(x=>typeof x==='string').join(' · ');}catch{return '';}
+}
+---
+{!bookings.length&&<p>No saved requests yet.</p>}
+{bookings.map(b=><article class="booking-row"><h3>{date.format(b.starts_at)}–{new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',timeStyle:'short'}).format(b.ends_at)} Eastern</h3><p><strong>{b.status==='requested'?'Pending owner approval':b.status==='approved'?'Approved':b.status==='canceled'?'Canceled':'Completed'}</strong>{b.email_normalized&&<> · {b.email_normalized}</>}</p>{owner&&b.profile_snapshot&&<p>{details(b.profile_snapshot)}</p>}<p class="hint">{b.validation_status==='simulated_pass'?'Identity/agent validation: simulated pass.':'Identity/agent validation: not verified.'} No access code or booking email is issued. Check this page for status changes.</p>{b.cancellation_reason&&<p>Cancellation reason: {b.cancellation_reason}</p>}
+{owner&&b.status==='requested'&&b.starts_at>Date.now()&&<form class="booking-action-form" data-owner="true" data-booking-id={b.id} data-revision={b.revision} data-action="approve"><label class="check"><input type="checkbox" name="acknowledge" required /> I understand that identity and agent validation are simulated, and approve this visit.</label><button type="submit" class="button">Approve request</button><p class="booking-result" role="status"></p></form>}
+{['requested','approved'].includes(b.status)&&b.ends_at>Date.now()&&<form class="booking-action-form" data-owner={String(owner)} data-booking-id={b.id} data-revision={b.revision} data-action="cancel"><label>Cancellation reason<textarea name="reason" required minlength="5" maxlength="1000"></textarea></label><button type="submit" class="button secondary">Cancel request and release time</button><p class="booking-result" role="status"></p></form>}
+</article>)}
+<script>import '../scripts/booking-actions';</script>

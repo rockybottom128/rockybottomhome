@@ -1,11 +1,17 @@
 import type { AppEnv } from './env';
-import { validatePeriod, type CalendarState, type Period } from '../lib/viewings/availability.ts';
+import { availableSlots, validatePeriod, type CalendarState, type Period } from '../lib/viewings/availability.ts';
+import { dayKey } from '../lib/viewings/calendar.ts';
+export type CalendarHold={startsAt:number;endsAt:number};
+export type CalendarSnapshot=CalendarState & {holds:CalendarHold[]};
+export function unreservedSlots(state:CalendarSnapshot,from:string,to:string,now=Date.now()){
+ return availableSlots(state.periods,from,to,now).filter(s=>!state.holds.some(b=>b.startsAt<s.endsAt&&b.endsAt>s.startsAt));
+}
 export class CalendarConflict extends Error {}
-export async function readCalendar(env:AppEnv):Promise<CalendarState> {
+export async function readCalendar(env:AppEnv):Promise<CalendarSnapshot> {
  // One query provides an internally consistent revision and complete snapshot.
- const result=await env.DB.prepare('SELECT s.revision,p.* FROM calendar_state s LEFT JOIN calendar_periods p ON 1=1 WHERE s.id=1 ORDER BY p.local_day,p.weekday,p.start_minute,p.id').all<Period & {revision:number}>();
+ const result=await env.DB.prepare(`SELECT s.revision,p.*,(SELECT json_group_array(json_object('startsAt',starts_at,'endsAt',ends_at)) FROM bookings WHERE status IN ('requested','approved') AND ends_at>?) AS holds_json FROM calendar_state s LEFT JOIN calendar_periods p ON 1=1 WHERE s.id=1 ORDER BY p.local_day,p.weekday,p.start_minute,p.id`).bind(Date.now()).all<Period & {revision:number;holds_json:string}>();
  if(!result.results.length)throw Error('Calendar migration is required.');
- return {revision:result.results[0].revision,periods:result.results.filter(p=>p.id!==null).map(({revision,...p})=>p)};
+ return {revision:result.results[0].revision,holds:JSON.parse(result.results[0].holds_json),periods:result.results.filter(p=>p.id!==null).map(({revision,holds_json,...p})=>p)};
 }
 export async function changeCalendar(env:AppEnv,ownerId:string,input:Record<string,unknown>) {
  const {revision,action}=input;
@@ -13,6 +19,16 @@ export async function changeCalendar(env:AppEnv,ownerId:string,input:Record<stri
  const id=action==='add'?crypto.randomUUID():input.id;
  if(typeof id!=='string'||!/^[-a-zA-Z0-9]{1,64}$/.test(id))throw Error('Invalid period.');
  const p=action==='remove'?null:validatePeriod(input.period),token=crypto.randomUUID(),now=Date.now();
+ const current=await readCalendar(env);
+ if(current.revision!==revision)throw new CalendarConflict('Calendar changed. Reload before editing.');
+ const proposed=current.periods.filter(row=>row.id!==id);
+ if(p)proposed.push({id,...p});
+ // Booking writes also advance this revision. A racing request cannot slip
+ // between this check and the conditional calendar write.
+ for(const hold of current.holds.filter(h=>h.endsAt>now)){
+  const day=dayKey(hold.startsAt);
+  if(!availableSlots(proposed,day,day,hold.startsAt-1).some(slot=>slot.startsAt===hold.startsAt&&slot.endsAt===hold.endsAt))throw new CalendarConflict('This change would block an existing request or approved visit. Cancel it from the dashboard first, then reload this calendar.');
+ }
  const guard="EXISTS(SELECT 1 FROM calendar_state WHERE id=1 AND mutation_id=?)";
  const statements=[env.DB.prepare(`UPDATE calendar_state SET revision=revision+1,mutation_id=?,updated_by=?,updated_at=? WHERE id=1 AND revision=? AND EXISTS(SELECT 1 FROM owner_accounts WHERE id=? AND status='active') AND ${action==='add'?'(SELECT COUNT(*) FROM calendar_periods)<500':'EXISTS(SELECT 1 FROM calendar_periods WHERE id=?)'}`).bind(token,ownerId,now,revision,ownerId,...(action==='add'?[]:[id])),
  env.DB.prepare(`INSERT INTO calendar_audit(revision,actor_id,period_id,action,before_json,after_json,created_at) SELECT revision,updated_by,?,?,(SELECT json_object('id',id,'kind',kind,'local_day',local_day,'weekday',weekday,'start_minute',start_minute,'end_minute',end_minute) FROM calendar_periods WHERE id=?),?,updated_at FROM calendar_state WHERE id=1 AND mutation_id=?`).bind(id,action,id,p?JSON.stringify({id,...p}):null,token)];

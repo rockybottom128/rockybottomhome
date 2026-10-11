@@ -54,7 +54,7 @@ test('migration and data layer persist across connections, reject stale/removed 
  try{
   for(const f of readdirSync('migrations').filter(x=>x.endsWith('.sql')).sort())db.exec(readFileSync('migrations/'+f,'utf8'));
   db.exec("INSERT INTO owner_accounts VALUES ('a','a@example.com','aa','active',0),('b','b@example.com','bb','active',0),('removed','removed@example.com','rr','removed',0)");
-  assert.deepEqual(await readCalendar(env),{revision:0,periods:[]});
+  assert.deepEqual(await readCalendar(env),{revision:0,periods:[],holds:[]});
   await changeCalendar(env,'a',{revision:0,action:'add',period:period()});
   db.close();({db,env}=fixture(path));
   const shared=await readCalendar(env);assert.equal(shared.revision,1);assert.equal(shared.periods.length,1);

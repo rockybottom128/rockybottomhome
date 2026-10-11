@@ -9,6 +9,6 @@
   },
   "change": {
     "level": "feature",
-    "reason": "Persist shared availability in D1 with protected calendar APIs, conflict handling, visitor slots and owner activity history"
+    "reason": "Persist shared availability, visitor profiles and real viewing requests with slot holds, owner review and audited changes"
   }
 }

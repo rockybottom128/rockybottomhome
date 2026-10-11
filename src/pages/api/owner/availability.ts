@@ -2,8 +2,8 @@ import type { APIRoute } from 'astro';
 import { runtime } from '../../../server/runtime';
 import { configured, body, json } from '../../../server/env';
 import { getOwner } from '../../../server/owner-auth';
-import { readCalendar, changeCalendar, CalendarConflict } from '../../../server/availability';
-import { availableSlots, validDay } from '../../../lib/viewings/availability';
+import { unreservedSlots, readCalendar, changeCalendar, CalendarConflict } from '../../../server/availability';
+import { validDay } from '../../../lib/viewings/availability';
 export const prerender=false;
 export const GET:APIRoute=async({request,url})=>{
  const env=runtime();if(!configured(env,request))return json({error:'Calendar service unavailable.'},503);
@@ -11,7 +11,7 @@ export const GET:APIRoute=async({request,url})=>{
  try{
   const state=await readCalendar(env),day=url.searchParams.get('day');
   if(day&&!validDay(day))return json({error:'Invalid date.'},400);
-  return json({...state,slots:day?availableSlots(state.periods,day,day):[]});
+  return json({revision:state.revision,periods:state.periods,slots:day?unreservedSlots(state,day,day):[]});
  }catch{return json({error:'Unable to load availability.'},503);}
 };
 export const POST:APIRoute=async({request})=>{
