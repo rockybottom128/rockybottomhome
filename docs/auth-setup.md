@@ -94,3 +94,7 @@ active owners can create invitations. Existing rate limits and the visitor-demo
 switch remain enforced. This policy was deployed with PR #9 at 0.3.1.0; future source edits still require reviewed promotion to change live behavior.
 
 Availability rules and dated exceptions now use D1 through migration 0005. Sample bookings and feedback remain browser-local. No browser examples or legacy scaffold availability records are imported. See [calendar availability](calendar-availability.md) for precedence, time-zone rules, concurrency and migration review. This describes the local 0.4.0.0 candidate; remote environments remain at the last verified release until separately published.
+
+## Owner activity history
+
+The 0.4.0.0 candidate moves shared Availability and database-backed Activity above the sample panels. Activity displays the latest 50 recorded calendar/account/demo-setting changes, including calendar before/after details. Successful visitor verification and owner password setup/reset now append safe audit events; this does not log codes, tokens, passwords or email bodies. See [calendar availability](calendar-availability.md#dashboard-activity) for coverage and historical limits.

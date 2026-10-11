@@ -26,9 +26,9 @@ export const POST:APIRoute=async({request,params})=>{
   if(params.action==='invite') {await inviteOwner(env,normalizeEmail(input.email),owner.id);return json({ok:true});}
   if(params.action==='remove' && typeof input.id==='string') {
    await env.DB.batch([
+    env.DB.prepare("INSERT INTO audit_events(id,actor_id,action,subject_id,created_at) SELECT ?,?,'owner_removed',id,? FROM owner_accounts WHERE id=? AND status!='removed'").bind(crypto.randomUUID(),owner.id,Date.now(),input.id),
     env.DB.prepare("UPDATE owner_accounts SET status='removed' WHERE id=? AND status!='removed'").bind(input.id),
     env.DB.prepare('DELETE FROM auth_session WHERE user_id=(SELECT auth_subject FROM owner_accounts WHERE id=?)').bind(input.id),
-    env.DB.prepare('INSERT INTO audit_events VALUES (?,?,?,?,?)').bind(crypto.randomUUID(),owner.id,'owner_removed',input.id,Date.now()),
    ]);return json({ok:true});
   }
   return json({error:'Not found.'},404);

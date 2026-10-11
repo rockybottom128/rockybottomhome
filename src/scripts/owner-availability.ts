@@ -4,8 +4,14 @@ import { el, label, drawCalendar, makeButton } from './viewing-sample-store';
 let day=dayKey(),month=day.slice(0,7),state:CalendarState|null=null,slots:Slot[]=[],pending=false,editing:string|null=null,generation=0;
 const value=(id:string)=>(el(id) as HTMLInputElement|HTMLSelectElement).value;
 const set=(id:string,v:string)=>{(el(id) as HTMLInputElement|HTMLSelectElement).value=v;};
+function scopeFields(){
+ const weekly=value('rule-scope')==='weekly';
+ el<HTMLInputElement>('rule-date').disabled=weekly||pending;
+ (el('rule-weekday') as unknown as HTMLSelectElement).disabled=!weekly||pending;
+}
 function status(text:string){el('availability-result').textContent=text;}
 function lock(){
+ scopeFields();
  el('availability-app').setAttribute('aria-busy',String(pending));
  document.querySelectorAll<HTMLButtonElement>('[data-mutation]').forEach(b=>b.disabled=pending||!state);
  el<HTMLButtonElement>('reload-calendar').disabled=pending;
@@ -32,7 +38,7 @@ async function change(action:string,id?:string,period?:Omit<Period,'id'>){
  }catch(error){state=null;status(error instanceof Error?error.message:'Save could not be confirmed. Reload before retrying.');}
  finally{pending=false;lock();}
 }
-function clearEdit(){editing=null;set('rule-date',day);el('period-heading').textContent='Add a time range.';el('save-period').textContent='Save period';el('rule-error').textContent='';}
+function clearEdit(){editing=null;scopeFields();set('rule-date',day);el('period-heading').textContent='Add a time range.';el('save-period').textContent='Save period';el('rule-error').textContent='';}
 function render(){
  set('owner-month',month);if(!editing)set('rule-date',day);el('owner-selected-day').textContent=label(day);
  drawCalendar(el('owner-calendar'),monthDays(month),day,d=>{if(pending||!validDay(d))return;day=d;month=d.slice(0,7);clearEdit();void load();},()=>pending);
@@ -43,9 +49,9 @@ function render(){
  for(const slot of slots){const b=makeButton(`${timeRange(slot.start,slot.end)} · Block`,()=>{void change('add',undefined,{kind:'blocked',local_day:day,weekday:null,start_minute:Number(slot.start.slice(0,2))*60,end_minute:Number(slot.end.slice(0,2))*60});});b.dataset.mutation='';tiles.appendChild(b);}
  const list=el('rule-list');list.replaceChildren();
  for(const p of state?.periods??[]){
-  const row=document.createElement('li');row.textContent=`${p.kind==='available'?'Available':'Blocked'} · ${p.local_day??(p.weekday===-1?'Every day':['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][p.weekday!])} · ${timeRange(wallTime(p.start_minute),wallTime(p.end_minute))} `;
-  const edit=makeButton('Edit',()=>{if(pending)return;editing=p.id;set('rule-kind',p.kind);set('rule-date',p.local_day??day);set('rule-scope',p.local_day?'date':'weekly');set('rule-weekday',String(p.weekday??-1));set('rule-start',wallTime(p.start_minute));set('rule-end',wallTime(p.end_minute));el('period-heading').textContent=`Edit ${p.local_day??'weekly range'}`;el('save-period').textContent='Save changes';el('rule-kind').focus();},'text-button');edit.dataset.mutation='';
-  const remove=makeButton('Remove',()=>{void change('remove',p.id);},'text-button');remove.dataset.mutation='';row.appendChild(edit);row.appendChild(remove);list.appendChild(row);
+  const row=document.createElement('li');row.textContent=`${p.kind==='available'?'Available':'Blocked'} · ${p.local_day??(p.weekday===-1?'Every day':`Every ${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][p.weekday!]}`)} · ${timeRange(wallTime(p.start_minute),wallTime(p.end_minute))} `;
+  const edit=makeButton('Edit',()=>{if(pending)return;editing=p.id;set('rule-kind',p.kind);set('rule-date',p.local_day??day);set('rule-scope',p.local_day?'date':'weekly');set('rule-weekday',String(p.weekday??-1));set('rule-start',wallTime(p.start_minute));set('rule-end',wallTime(p.end_minute));el('period-heading').textContent=`Edit ${p.local_day??'weekly range'}`;el('save-period').textContent='Save changes';scopeFields();el('rule-kind').focus();},'text-button');edit.dataset.mutation='';
+  const remove=makeButton('Remove',()=>{void change('remove',p.id);},'text-button');remove.dataset.mutation='';const actions=document.createElement('span');actions.className='period-actions';actions.appendChild(edit);actions.appendChild(document.createTextNode(' '));actions.appendChild(remove);row.appendChild(actions);list.appendChild(row);
  }
  if(state&&!state.periods.length)list.textContent='No periods configured. Visitors have no available slots.';
  lock();
@@ -62,4 +68,5 @@ function move(delta:number){const d=new Date(month+'-01T12:00:00Z');d.setUTCMont
 el('previous-month').addEventListener('click',()=>move(-1));el('next-month').addEventListener('click',()=>move(1));el('owner-month').addEventListener('change',()=>navigate(value('owner-month')));
 el('today-month').addEventListener('click',()=>{if(pending)return;day=dayKey();month=day.slice(0,7);clearEdit();void load();});
 el('cancel-edit').addEventListener('click',clearEdit);el('reload-calendar').addEventListener('click',()=>{clearEdit();void load();});
+el('rule-scope').addEventListener('change',scopeFields);
 void load();

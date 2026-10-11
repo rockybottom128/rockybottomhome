@@ -5,6 +5,7 @@ import {readFileSync,readdirSync,mkdtempSync,rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {availableSlots,uniqueInstant,validatePeriod,visitorWindow} from '../src/lib/viewings/availability.ts';
+import {readActivity} from '../src/server/activity.ts';
 import {readCalendar,changeCalendar,CalendarConflict} from '../src/server/availability.ts';
 const period=(kind='available',start=540,end=1020,extra={})=>({id:'p',kind,start_minute:start,end_minute:end,weekday:-1,local_day:null,...extra});
 const slots=(ps,day='2026-10-12')=>availableSlots(ps,day,day,0);
@@ -69,6 +70,14 @@ test('migration and data layer persist across connections, reject stale/removed 
   assert.equal(slots((await readCalendar(env)).periods).length,8);
   const audit=db.prepare('SELECT * FROM calendar_audit ORDER BY revision').all();assert.equal(audit.length,4);assert.equal(audit[2].actor_id,'b');assert.equal(JSON.parse(audit[2].before_json).end_minute,660);assert.equal(JSON.parse(audit[2].after_json).end_minute,720);
   assert.equal(audit[3].after_json,null);
+  db.prepare('INSERT INTO audit_events VALUES (?,?,?,?,?)').run('invite','a','owner_invited','b',Date.now()+1000);
+  const activity=await readActivity(env);
+  assert.equal(activity.length,5);assert.equal(activity[0].title,'Owner invited');assert.equal(activity[0].actor,'a@example.com');assert.equal(activity[0].detail,'b@example.com');
+  const edited=activity.find(a=>a.title==='Calendar period updated');assert.match(edited.detail,/Every day/);assert.match(edited.detail,/→/);assert.equal(edited.actor,'b@example.com');
+  assert.ok(!JSON.stringify(activity).includes('password'));assert.ok(!JSON.stringify(activity).includes('mutation_id'));
+  for(let i=0;i<55;i++)db.prepare('INSERT INTO audit_events VALUES (?,?,?,?,?)').run('event-'+i,'a','visitor_demo_enabled','visitor_demo',Date.now()+2000+i);
+  const recent=await readActivity(env);assert.equal(recent.length,50);assert.equal(recent[0].id,'event-54');assert.ok(recent.every(a=>a.title==='Visitor demo enabled'));
+
   // Failure in a later statement must roll back revision AND audit.
   db.exec("CREATE TRIGGER fail_period BEFORE INSERT ON calendar_periods BEGIN SELECT RAISE(ABORT,'fixture failure'); END");
   await assert.rejects(changeCalendar(env,'a',{revision:4,action:'add',period:period()}));assert.equal((await readCalendar(env)).revision,4);assert.equal(db.prepare('SELECT COUNT(*) n FROM calendar_audit').get().n,4);

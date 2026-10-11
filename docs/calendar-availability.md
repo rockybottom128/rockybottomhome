@@ -32,3 +32,7 @@ Run `npm run test:availability` for calculations, DST, validation, persistence t
 Production preparation requires a separately reviewed backup/recovery point and compatibility plan; see the environment runbook. Migration 0005 preserves old schema/data, and old code remains schema-compatible. It will not display the new shared calendar after rollback. Do not interpret code rollback as data rollback. Do not reset a database to apply the migration.
 
 D1 batch transaction behavior: [Cloudflare D1 database API](https://developers.cloudflare.com/d1/worker-api/d1-database/).
+
+## Dashboard activity
+
+Availability and saved Activity appear above the sample workflow. The owner-only dashboard shows the latest 50 events from `calendar_audit` and `audit_events`, newest first, with actor, Eastern timestamp and calendar before/after descriptions. Older events remain in D1. Reload the dashboard to see new changes. Existing calendar edits, invitations/removals and visitor-demo changes are shown immediately; successful visitor email verification and owner password setup/reset are logged from this update onward. Historical events that were never logged cannot be reconstructed. Passwords, reset links, OTPs, session tokens and email bodies are never copied into activity. This is domain-change history, not a complete security/access log: sign-ins, failed attempts and page views are not added here. Simulated approvals, replies and automation continue using the separate sample log and are not written into real history. No new migration is needed for this panel.

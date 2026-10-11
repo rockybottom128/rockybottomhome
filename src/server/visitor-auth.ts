@@ -34,6 +34,7 @@ export async function verifyVisitorCode(env:AppEnv,email:string,entered:string,i
     env.DB.prepare(`INSERT INTO visitor_sessions(token_digest,visitor_id,expires_at,challenge_generation) SELECT ?,visitor_id,?,generation FROM email_challenges WHERE visitor_id=? AND generation=? AND consumed_at IS NULL AND expires_at>? AND delivery='sent' ON CONFLICT DO NOTHING`).bind(sessionHash,now+3600000,row.visitor_id,row.generation,now),
     env.DB.prepare('UPDATE email_challenges SET consumed_at=? WHERE visitor_id=? AND generation=? AND EXISTS(SELECT 1 FROM visitor_sessions WHERE token_digest=?)').bind(now,row.visitor_id,row.generation,sessionHash),
     env.DB.prepare('UPDATE visitors SET email_verified_at=? WHERE id=? AND EXISTS(SELECT 1 FROM visitor_sessions WHERE token_digest=?)').bind(now,row.visitor_id,sessionHash),
+    env.DB.prepare("INSERT INTO audit_events(id,actor_id,action,subject_id,created_at) SELECT ?,?,'visitor_email_verified',?,? WHERE EXISTS(SELECT 1 FROM visitor_sessions WHERE token_digest=?)").bind(crypto.randomUUID(),row.visitor_id,row.visitor_id,now,sessionHash),
   ]);
   return results[0].meta.changes===1 ? session : null;
 }

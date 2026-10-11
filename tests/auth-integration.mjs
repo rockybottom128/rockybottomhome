@@ -32,6 +32,7 @@ try {
  const password='Local-only '+crypto.randomUUID();
  assert.equal((await post('/api/owner-auth/reset-password',{token:recovery,newPassword:password})).status,200);
  assert.equal((await post('/api/owner-auth/reset-password',{token:recovery,newPassword:password})).status,400,'Reset tokens are one-use');
+ assert.equal(db.prepare("SELECT COUNT(*) n FROM audit_events WHERE action='owner_password_reset'").get().n,1,'Only completed password setup is audited');
  assert.equal((await post('/api/owner-auth/sign-in/email',{email:'owner@example.com',password:'wrong password'})).status,401);
  const login=await post('/api/owner-auth/sign-in/email',{email:'owner@example.com',password});assert.equal(login.status,200);const ownerCookie=cookies(login);
  assert.equal((await post('/api/owner/visitor-demo',{enabled:false},ownerCookie)).status,200);
@@ -44,6 +45,10 @@ try {
  assert.equal(db.prepare("SELECT COUNT(*) AS n FROM visitors WHERE email_normalized='blocked@notallowed.test'").get().n,0,'Rejected recipient must not create a visitor record');
  assert.match(ownerCookie,/rb-owner/);assert.ok(login.headers.getSetCookie().some(c=>/httponly/i.test(c)));
  const dashboard=await fetch(base+'/owner/dashboard',{headers:{cookie:ownerCookie}});assert.equal(dashboard.status,200);const html=await dashboard.text();assert.match(html,/PRIVATE OWNER DASHBOARD/);assert.match(html,/INTERACTIVE WORKFLOW PREVIEW/);assert.match(html,/id="booking-list"/);assert.doesNotMatch(html,/id="add-owner"/);assert.equal(dashboard.headers.get('cache-control'),'no-store');
+ assert.ok(html.indexOf('id="shared-availability"')<html.indexOf('id="workflow-heading"'));
+ assert.ok(html.indexOf('id="shared-activity"')<html.indexOf('id="workflow-heading"'));
+ assert.match(html,/Owner password set or reset/);
+ assert.doesNotMatch(html,/Calendar controls still use fictional browser data/);
  const owner=db.prepare("SELECT id FROM owner_accounts WHERE email_normalized='owner@example.com'").get();
  assert.equal((await post('/api/owner/remove',{id:owner.id},ownerCookie)).status,400,'Last active owner protected');
  assert.equal((await fetch(base+'/owner/dashboard',{headers:{cookie:ownerCookie},redirect:'manual'})).status,200);
@@ -81,6 +86,7 @@ try {
  assert.equal((await post('/api/visitor/verify',{email:'visitor@example.com',code:first})).status,400,'Replaced code rejected');
  const responses=await Promise.all([post('/api/visitor/verify',{email:'visitor@example.com',code:latest}),post('/api/visitor/verify',{email:'visitor@example.com',code:latest})]);
  assert.deepEqual(responses.map(r=>r.status).sort(),[200,400],'Concurrent verification consumes the code once');
+ assert.equal(db.prepare("SELECT COUNT(*) n FROM audit_events WHERE action='visitor_email_verified'").get().n,1,'Concurrent/replayed verification creates only one audit event');
  const visitorCookie=cookies(responses.find(r=>r.status===200));
  assert.equal((await fetch(base+'/owner/dashboard',{headers:{cookie:visitorCookie},redirect:'manual'})).status,303,'Visitor session cannot grant owner access');
  assert.equal((await fetch(base+'/viewings/status/',{headers:{cookie:visitorCookie},redirect:'manual'})).status,200);
@@ -99,6 +105,8 @@ try {
  assert.equal((await change({revision:3,action:'remove',id:current.periods.find(p=>p.kind==='available').id})).status,200);
  assert.equal((await (await fetch(slotPath,{headers:{cookie:visitorCookie}})).json()).slots.length,0);
  assert.equal(db.prepare('SELECT COUNT(*) n FROM bookings').get().n,0);
+ const activityDashboard=await (await fetch(base+'/owner/dashboard/',{headers:{cookie:ownerCookie}})).text();
+ assert.match(activityDashboard,/Calendar period removed/);assert.match(activityDashboard,/Visitor email verified/);
  await post('/api/owner/visitor-demo',{enabled:false},ownerCookie);
  assert.equal((await post('/api/visitor/demo-access',{},visitorCookie)).status,403);
  assert.equal((await fetch(slotPath,{headers:{cookie:visitorCookie}})).status,403);
