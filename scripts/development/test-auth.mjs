@@ -24,7 +24,7 @@ try {
  writeFileSync(resolve(cwd,'.dev.vars'),['AUTH_SECRET','OTP_SECRET','BOOTSTRAP_TOKEN'].map(key=>key+'='+randomBytes(32).toString('hex')).join('\n')+'\n',{mode:0o600});
  const env={...process.env,RB_LOCAL_AUTH:'1',RB_AUTH_DEV:'0',RB_ISOLATED_AUTH_TEST:'1',ASTRO_TELEMETRY_DISABLED:'1',XDG_CONFIG_HOME:resolve(work,'config')};
  // Do not inherit real mail configuration into the fixture Worker.
- for(const key of ['RESEND_API_KEY','MAIL_MODE','MAIL_ALLOWED_RECIPIENTS','AUTH_SECRET','OTP_SECRET','BOOTSTRAP_TOKEN','WRANGLER_SEND_METRICS'])delete env[key];
+ for(const key of ['RESEND_API_KEY','MAIL_MODE','MAIL_ALLOWED_RECIPIENTS','VISITOR_EMAIL_ADDRESSES','AUTH_SECRET','OTP_SECRET','BOOTSTRAP_TOKEN','WRANGLER_SEND_METRICS'])delete env[key];
  const run=args=>execFileSync(process.execPath,args,{cwd,env,stdio:['ignore',fd,fd]});
  run(['node_modules/astro/bin/astro.mjs','build']);
  run(['node_modules/wrangler/bin/wrangler.js','d1','migrations','apply','DB','--local','--config','wrangler.auth-local.json']);

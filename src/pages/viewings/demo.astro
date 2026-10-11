@@ -9,4 +9,4 @@ import {visitorDemoEnabled} from '../../server/settings';
 const env=runtime();
 if(!configured(env,Astro.request) || !await visitorDemoEnabled(env) || !await getVisitor(env,Astro.request))return Astro.redirect('/viewings/',303);
 ---
-<ViewingLayout title="Simulated viewing workflow"><ViewingIntake source="public" verifiedDemo={true} /></ViewingLayout>
+<ViewingLayout title="Request a viewing"><ViewingIntake source={Astro.url.searchParams.get('source')==='mls'?'mls':'public'} verifiedDemo={true} /></ViewingLayout>

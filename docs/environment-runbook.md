@@ -132,7 +132,7 @@ Visitor codes have eight digits, ten-minute expiry and five attempts. Current co
 
 The database-backed visitor-demo switch is initially off on fresh installation; its current value is owner-controlled and must not be reset by deployments. Off blocks visitor sending, verification and demo access while preserving owner login and existing records.
 
-Identity/agent checks, booking submission, calendar availability, conversation examples and lockbox actions remain simulations. Sample calendar data is browser-local, not shared D1 availability. Sending/receiving DNS verification does not change that scope. Retention cleanup, broader anti-abuse capacity, durable email delivery tracking and backup policy remain follow-up work.
+The 0.4.0.0 source candidate adds shared D1 availability with migration 0005; it is applied on shared dev; production preparation remains pending. See [calendar availability](calendar-availability.md) for the migration review and release checks. Migration 0006 adds visitor-provided profiles and real pending requests, approvals and cancellations. Identity/agent checks, the separate sample dashboard, conversation examples and lockbox actions remain simulations. Sending/receiving DNS verification does not change that scope. Migration 0007 adds a live owner showing calendar, durable approval/cancellation notifications and owner-initiated email for upcoming pending/approved requests. Retention cleanup, broader anti-abuse capacity, inbox delivery/bounce tracking and backup policy remain follow-up work.
 
 ## Recovery or new-project sequence
 
@@ -160,3 +160,49 @@ Identity/agent checks, booking submission, calendar availability, conversation e
 Static/content development commonly uses port 4321. The authenticated local Worker preview uses port 4324, local persisted D1, and the Linux user service `rockybottom-auth-preview`; restart it after rebuilding. Port 4322 was an older static preview and cannot substitute for the auth runtime. `npm run test:auth:isolated` uses disposable local D1/fake mail on port 4325.
 
 A machine-specific supervisor workspace has review scripts and a pre-push guard; these are not GitHub protections and are not automatically installed by cloning. Keep private operator instructions outside this public repository. Other contributors need GitHub access, not local Cloudflare or Resend credentials, for ordinary Git-triggered publishing.
+
+## Calendar migration 0005 — pending release preparation
+
+The candidate adds `calendar_state`, `calendar_periods`, and `calendar_audit`; it does not modify or seed owners, visitors, demo settings, bookings, or legacy scaffold tables. The explicit initial state is zero available times. Browser-local examples are never imported. Dev publication applies this migration through the existing guarded dev deploy command after authorization. The remote inventory above remains historical evidence; see the shared-dev verification below for the later 0005–0007 deployment.
+
+Before production promotion, separately review the SQL and [calendar policy](calendar-availability.md), capture a production D1 backup/recovery point with its timestamp and database identity, and verify restore access and a compatibility/rollback plan. No backup was taken or production migration performed during local implementation. Apply 0005 to production only as separately authorized preparation, before code requiring these tables. The migration is additive and old code can still run, but old code only shows fictional local availability; rolling code back leaves new settings/audit data intact and temporarily removes shared-calendar behavior. Do not drop the new tables or erase auth data to roll back.
+
+After authorized dev publication: with approved existing accounts, have Owner A save a period and Owner B reload on another browser/device; verify visitor slots, add/remove a block, then verify persistence through the next authorized deployment. Local automated tests use disposable D1 and fake mail only. Remote cross-device/deployment checks remain release verification, not something local tests prove.
+
+## Visitor booking migration 0006 — pending release preparation
+
+The candidate adds `visitor_intake_profiles` and additive booking metadata columns/indexes. It does not reset existing visitors, owners, passwords, sessions, availability or visitor-switch settings. Existing bookings receive `unverified` validation status; they are never converted into simulated passes. Review 0005 and 0006 together and apply both before promoting this code. Use the same separately authorized production backup/recovery and compatibility preparation described above. Dev applies pending migrations only after publication is authorized.
+
+Real requests hold slots, so code rollback to a version that ignores D1 bookings is behaviorally unsafe even though the schema is compatible. Before rollback, pause visitor booking and resolve/review existing holds with owners; preserve the database and make a deliberate recovery plan. Do not drop tables or reset accounts. [Visitor booking](visitor-booking.md) defines the new transaction and testing policy.
+
+For controlled production testing, leave **Visitor booking settings** disabled except during an approved test window. An empty availability calendar exposes no slots; dated available periods can open only the desired test times. Recurring blocks always win and are not overridden by dated availability. Switching booking off does not delete or release existing requests; owners must cancel test requests explicitly when finished. This documentation does not change the current remote setting or authorize production publication.
+
+## Booking notification migration 0007 — pending release preparation
+
+Additive migration 0007 adds outbox timestamps/actor attribution and query indexes. It preserves owner/visitor/auth records, bookings, availability and the booking switch. No email is queued by the migration, and old scaffold outbox rows remain ineligible for delivery. The current local candidate requires 0005–0007; review and apply them before promoting this code. Use separately authorized production backup/recovery and compatibility preparation. No production migration, backup, publication or secret change is authorized by local implementation.
+
+Approval/cancellation commits now include notification payloads and audit; actual sending follows commit. Interrupted actions may leave queued messages visible in dashboard email history. Retry only `pending` or preflight `failed` messages there. `uncertain` and persistent `sending` require provider inspection and authorized operator reconciliation; never reset them blindly, since an email may have been accepted. In-flight messages cannot be recalled by cancellation, disabling visitor booking or rolling back code. Older code ignores this outbox; after rollback, inspect outstanding messages rather than assuming they will send. Keep records intact. See [notification behavior](visitor-booking.md#live-owner-calendar-and-email-migration-0007).
+
+Local acceptance checks use `npm run test:booking`, `npm run test:mail` and `npm run test:auth:isolated`, with disposable databases/fake mail. Persistent local preview can use real Resend through its ignored local settings, so do not trigger owner actions merely to test rendering. After authorized shared-dev publication, review green approved/yellow pending markers and actual email acceptance with explicitly approved test bookings; separately verify inbox receipt.
+
+## Shared-dev batch verification — 2026-10-10
+
+Published feature `rockyadmin/database-availability` at `19a4255ece79012637ddbc746399d89bc6f0f644` to dev snapshot `b60705c11a72e282f0adf254dbd4eb4c3cd7e7b7`; both share tree `97ac0071674d71ee7bdc874eb3b2d386a3d9068b`. Shared-dev `/version.json` served prelaunch 0.4.0.0 with that dev SHA. Both Workers Builds checks succeeded. Read-only dev migration listing reported no pending migrations (0005–0007 are applied). This documentation follow-up retains the verified application source and is published through the same guarded dev workflow.
+
+Read-only HTTP checks: owner sign-in 200, anonymous owner dashboard redirects to sign-in, owner availability API 401, visitor availability API 403 with booking paused. No remote accounts, booking settings, availability or bookings were changed manually, and no test emails were sent. Dev retains its own records; local test data was not copied. Authenticated cross-device and actual inbox tests remain for the owner. Production was not deployed or migrated; no PR was created.
+
+The machine's historical review-only pre-push hook blocks all refs, including dev. This publication used an explicitly authorized, process-scoped hook allowing only the exact feature commit and identical-tree fast-forward dev snapshot. The original hook and GitHub protections remained unchanged. That blanket local guard is a historical workstation policy, not a GitHub requirement for dev publication.
+
+## Visitor allowlist additions — 2026-10-11
+
+The next feature-branch update adds three visitor domains and support for additive private `VISITOR_EMAIL_ADDRESSES` exceptions. The operator has staged five requested exact-address additions privately; do not replace the existing `MAIL_ALLOWED_RECIPIENTS` list or publish private address values in Git. The additive private binding was provisioned on shared dev on 2026-10-11; the corresponding source is published through the feature/dev workflow. Production settings remain unchanged. See [authentication guidance](auth-setup.md#additional-visitor-testing-allowlist--2026-10-11) for provisioning before deployment. Existing verification gates, rate limits and owner-mail policy remain unchanged.
+
+## Visitor allowlist migration 0008 — pending release preparation
+
+The next local candidate adds three allowlist tables and owner-only list APIs. Apply 0008 before this code. Runtime atomically imports the current environment's six configured domains and all existing private address exceptions once; those settings are never reapplied after initialization. Domain/email edits then persist in D1, with owner attribution and list revision checks. No credential changes or new seed secrets are required in dev: existing private bindings are preserved and imported at runtime. See [allowlist migration and rollback](visitor-allowlist.md).
+
+Production remains separately authorized: capture the database backup/recovery point, review pending 0005–0008 migrations and ensure desired initial private exceptions are provisioned before first policy read. Rolling back to environment-only code can restore access an owner removed in D1; pause visitor access and reconcile before rollback. Do not reset accounts, existing requests or the initialization flag. Local and isolated tests do not establish remote cross-device behavior.
+
+## Visitor email filter — 2026-10-11 candidate
+
+Migration 0009 preserves existing Allow entries and adds an empty Block list plus Global email filter, initially On. The visitor enable switch wins first; then any Allow match wins; then Block matches deny; unmatched email follows the Global filter (On denies, Off permits). Verification remains mandatory. Both lists and the slider are owner-managed, revision-protected and audited. See [visitor email rules](visitor-allowlist.md) for precedence, initialization, migration and rollback review. Shared-dev publication applies pending 0008/0009; production preparation remains separately authorized.

@@ -4,9 +4,11 @@ Current as of 2026-10-10: owner authentication and visitor email verification ar
 
 ## Implemented scope
 
-The public home remains static. Owner, visitor and API routes render on the Worker. D1 migrations 0001–0004 define application and authentication records. Better Auth 1.7.7 owns password hashing (its default scrypt), password recovery, sessions and auth rate limits through the Drizzle D1 adapter. Public owner registration and unused auth endpoints are not exposed. All owners have equal permissions; invitation-only accounts activate after password setup. Removing access invalidates sessions, and a database trigger protects the last active owner. Owner dashboard/demo/availability routes require a current active-owner session on every request. The new dashboard displays real D1 visitor verification records. Old calendar/demo actions remain explicitly fictional; bookings and access hardware are outside this batch.
+The calendar changes below describe the local **0.4.0.0 candidate**, including pending migrations 0005–0006. They are not a claim of remote deployment; the remote inventory remains at the last verified 0.3.1.0 release.
 
-Visitors supply an email before the server creates/reuses their opaque visitor ID. A cryptographic eight-digit code is sent, expires after ten minutes, permits five attempts and is stored as a keyed digest. Server-side email cooldown, IP limits and a global daily sending cap apply. Requesting a new code replaces the previous challenge. Only successful delivery enables verification; ambiguous/failed delivery does not automatically retry. D1 atomic batches and a unique challenge-generation index prevent concurrent reuse. Verification creates a one-hour HttpOnly session and saves the email verification result. Owner and visitor cookies/authentication are independent. Verification stops before real agent/identity checks or bookings.
+The public home remains static. Owner, visitor and API routes render on the Worker. D1 migrations 0001–0008 define application, authentication and shared calendar records. Better Auth 1.7.7 owns password hashing (its default scrypt), password recovery, sessions and auth rate limits through the Drizzle D1 adapter. Public owner registration and unused auth endpoints are not exposed. All owners have equal permissions; invitation-only accounts activate after password setup. Removing access invalidates sessions, and a database trigger protects the last active owner. Owner dashboard/demo/availability routes require a current active-owner session on every request. The new dashboard displays real D1 visitor verification records. Owner availability uses shared D1 records and authenticated APIs; visitor profiles and booking requests are also persisted. Identity/agent validation remains simulated, and access hardware is not connected.
+
+Visitors supply an email before the server creates/reuses their opaque visitor ID. A cryptographic eight-digit code is sent, expires after ten minutes, permits five attempts and is stored as a keyed digest. Server-side email cooldown, IP limits and a global daily sending cap apply. Requesting a new code replaces the previous challenge. Only successful delivery enables verification; ambiguous/failed delivery does not automatically retry. D1 atomic batches and a unique challenge-generation index prevent concurrent reuse. Verification creates a one-hour HttpOnly session and saves the email verification result. Owner and visitor cookies/authentication are independent. Verification grants access to saved profiles and real viewing requests when booking is enabled; agent/identity validation is explicitly simulated.
 
 State-changing requests require the configured exact Origin, JSON and bounded inputs. Secrets are server-only. Protected responses use no-store and no-referrer. Owner recovery links carry tokens in URL fragments, not request URLs, and the browser removes the fragment before submission. Recovery tokens use Better Auth's hashed verification identifiers. Session cookies are Secure on HTTPS; local loopback testing uses HTTP. The hostname must exactly match APP_ORIGIN, which also prevents unconfigured preview hosts from opening authentication endpoints.
 
@@ -54,7 +56,9 @@ References: [Better Auth password authentication](https://better-auth.com/docs/a
 
 ## Visitor demo switch
 
-Migration 0004 adds a database-backed `visitor_demo` setting, disabled by default. Any active owner can change it under **Visitor demo settings** in the dashboard; changes are audited. Off blocks visitor send/verify/demo-access API calls before they mutate visitor records or send mail. Sign-out and owner authentication remain available. Already-dispatched emails cannot be recalled. No cached settings are used. Verified visitors can enter `/viewings/demo/` only when enabled, and the demo checks access before simulated identity/booking submission and every 15 seconds while open. Simulated profiles/bookings remain fictional browser data; no Stripe, real booking or lockbox calls occur. Enabling does not remove the recipient allowlist or rate limits.
+Migration 0004 adds a database-backed `visitor_demo` setting, disabled by default. In the 0.4.0.0 candidate its dashboard label is **Visitor booking settings**. The same switch now gates visitor email sending/verification, profile read/write, calendar access and booking read/write. Off preserves existing records and holds, blocks visitor actions, and leaves owner login/calendar/request management available. Owners can cancel requests while visitors are paused. Sign-out remains available. Already-dispatched email cannot be recalled. No cached settings are used; booking insertion checks the switch again inside the transaction. Enabling does not remove recipient restrictions or rate limits. Do not reset this owner-controlled value during deployments.
+
+Saved agent details have the literal status `simulated_pass`, never real license/contact verification. Bookings preserve the submitted profile snapshot and require owner acknowledgment of the simulation before approval. Approval/cancellation and eligible owner-initiated messages now use the mail service, with durable outbox status. No Stripe, lockbox or automatic-approval calls occur. See [visitor booking](visitor-booking.md).
 
 The authenticated owner dashboard also includes the earlier interactive sample
 workflow panels (request approval/cancellation, automation, availability,
@@ -62,8 +66,7 @@ conversation replies and sample activity). These share `OwnerWorkflowDemo.astro`
 with `/owner/demo/`. Sample owner controls appear only on the standalone demo;
 the authenticated dashboard retains real database-backed owner management.
 Sample actions do not send mail, install PINs or write booking records. Request
-and reply examples reset on reload; the availability demo retains its existing
-browser-local storage. The visitor demo switch remains independent of these
+and reply examples reset on reload; the availability link opens the real shared D1 calendar. The visitor demo switch remains independent of these
 owner-only sample controls.
 
 
@@ -92,7 +95,30 @@ The public visitor API cannot select owner-mail delivery. Only authenticated
 active owners can create invitations. Existing rate limits and the visitor-demo
 switch remain enforced. This policy was deployed with PR #9 at 0.3.1.0; future source edits still require reviewed promotion to change live behavior.
 
-Availability blocks, default ranges, sample bookings and sample feedback still
-use browser-local storage. They are not D1-backed and should not be used to test
-cross-device availability. A later scheduling implementation must persist owner
-rules and exceptions and calculate visitor availability from the same server data.
+Availability rules and dated exceptions now use D1 through migration 0005. New visitor bookings are real D1 records with migration 0006. Historical browser-local examples and the separate dashboard samples remain fictional and are never imported. No browser examples or legacy scaffold availability records are imported. See [calendar availability](calendar-availability.md) for precedence, time-zone rules, concurrency and migration review. The 0.4.0.0 candidate is now published to shared dev; production remains at its prior release. See the environment runbook for deployment evidence.
+
+## Owner activity history
+
+The 0.4.0.0 candidate moves shared Availability and database-backed Activity above the sample panels. Activity displays the latest 50 recorded calendar/account/demo-setting changes, including calendar before/after details. Successful visitor verification and owner password setup/reset now append safe audit events; this does not log codes, tokens, passwords or email bodies. See [calendar availability](calendar-availability.md#dashboard-activity) for coverage and historical limits.
+
+## Booking notifications and owner messages
+
+Migration 0007 makes approval/cancellation notifications and owner-initiated messages durable. Active-owner authentication and same-origin JSON checks protect both message creation and sending/retrying queued email. Only future pending/approved bookings accept new owner messages; the server derives their verified recipient. Visitor APIs never expose owner message history or provider receipts. Existing recipient restrictions and mail rate limits still apply. The visitor switch does not prevent owners managing existing requests and notifying their visitors.
+
+The dashboard reports provider acceptance separately from unknown/failed sends. No inbound mailbox, webhook delivery confirmation or automatic retry worker is enabled. See [visitor booking](visitor-booking.md#live-owner-calendar-and-email-migration-0007) for concurrency, retry safety and migration review.
+
+## Additional visitor testing allowlist — 2026-10-11
+
+The feature branch adds exact domains `transfix.io`, `trshvac.com`, and `trs-hvac.com`, retaining `farts.cloud`, `scottdempsey.com`, and `table42.cafe`, in local/dev/production source configuration. This does not change deployed environments until publication.
+
+`VISITOR_EMAIL_ADDRESSES` is an optional private, comma-separated list of additional exact visitor addresses. It is combined with the existing private `MAIL_ALLOWED_RECIPIENTS` exceptions; neither enables an entire mailbox-provider domain. Matching ignores case but does not collapse dots or plus aliases, and does not allow subdomains. Five owner-approved Gmail/Yahoo addresses are staged privately on the operator PC, not committed to source or test fixtures. The local preview uses the additions from ignored `.dev.vars`.
+
+The new `VISITOR_EMAIL_ADDRESSES` private binding was provisioned on shared dev on 2026-10-11, after confirming it did not already exist; the separate `MAIL_ALLOWED_RECIPIENTS` secret was preserved. Publishing this source enables the additions on dev. No authentication or mail-provider credentials need changing. Production needs the same allowlist preparation only when separately authorized for promotion; a code merge alone does not provision private values. Visitor booking must still be enabled and email verification completed. Tests use fictional individual addresses and fake delivery.
+
+## Database-backed visitor allowlist (migration 0008)
+
+The next candidate replaces ongoing environment-based visitor permission checks with owner-managed D1 records. Existing per-environment domains/private exceptions import exactly once; afterward the dashboard list is authoritative, including when empty. Owner authentication remains independent. See [visitor allowlist](visitor-allowlist.md) for editing, effects on existing sessions/bookings, audit and release preparation. Earlier environment configuration sections describe the import sources, not overrides for an initialized database.
+
+## Visitor email filter — 2026-10-11 candidate
+
+Migration 0009 preserves existing Allow entries and adds an empty Block list plus Global email filter, initially On. The visitor enable switch wins first; then any Allow match wins; then Block matches deny; unmatched email follows the Global filter (On denies, Off permits). Verification remains mandatory. Both lists and the slider are owner-managed, revision-protected and audited. See [visitor email rules](visitor-allowlist.md) for precedence, initialization, migration and rollback review. Shared-dev publication applies pending 0008/0009; production preparation remains separately authorized.

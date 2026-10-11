@@ -28,7 +28,7 @@
     "MAIL_MODE": "resend",
     "MAIL_FROM": "bookings@notify.rockybottomhome.com",
     "MAIL_REPLY_TO": "bookings@rockybottomhome.com",
-    "VISITOR_EMAIL_DOMAINS": "farts.cloud,scottdempsey.com,table42.cafe"
+    "VISITOR_EMAIL_DOMAINS": "farts.cloud,scottdempsey.com,table42.cafe,transfix.io,trshvac.com,trs-hvac.com"
   },
   "account_id": "e6144913ec6fa3b523d5d7e50cce2c40",
   "workers_dev": true

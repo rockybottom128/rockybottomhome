@@ -1,14 +1,10 @@
 import { limit } from './rate-limit';
 import { normalizeEmail, type AppEnv } from './env';
-export function visitorRecipientAllowed(env:AppEnv,email:string):boolean {
-  const normalized=normalizeEmail(email);
-  const addresses=(env.MAIL_ALLOWED_RECIPIENTS??'').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
-  const domains=(env.VISITOR_EMAIL_DOMAINS??'').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
-  const domain=normalized.slice(normalized.lastIndexOf('@')+1);
-  return addresses.includes(normalized) || domains.includes(domain);
-}
-/** No caller-controlled subject/body endpoint. Never log provider payloads or credentials. */
-export async function sendMail(env: AppEnv, to: string, subject: string, text: string, purpose: 'visitor' | 'owner' = 'visitor'): Promise<void> {
+export {allowedVisitorEmail as visitorRecipientAllowed} from './visitor-allowlist';
+import {allowedVisitorEmail as visitorRecipientAllowed} from './visitor-allowlist';
+/** Callers authorize recipients and build subjects; owner messages allow bounded text. Never log provider payloads or credentials. */
+export class MailDeliveryUncertain extends Error { readonly uncertain=true; }
+export async function sendMail(env: AppEnv, to: string, subject: string, text: string, purpose: 'visitor' | 'owner' = 'visitor', deliveryKey?:string): Promise<string> {
   to=normalizeEmail(to);
   if (/[\r\n]/.test(subject)) throw new Error('Invalid email subject');
   if(purpose==='owner') {
@@ -16,7 +12,7 @@ export async function sendMail(env: AppEnv, to: string, subject: string, text: s
     // active or invited owner. The public visitor API cannot select this purpose.
     const owner=await env.DB.prepare("SELECT id FROM owner_accounts WHERE email_normalized=? AND status IN ('active','invited')").bind(to).first();
     if(!owner)throw new Error('Owner recipient is not authorized');
-  } else if(!visitorRecipientAllowed(env,to)) {
+  } else if(!await visitorRecipientAllowed(env,to)) {
     throw new Error('This email is not enabled for visitor testing.');
   }
   await limit(env,'mail-global',100,86400000);
@@ -24,7 +20,7 @@ export async function sendMail(env: AppEnv, to: string, subject: string, text: s
   if (env.MAIL_MODE === 'test') {
     if (!['127.0.0.1','localhost'].includes(new URL(env.APP_ORIGIN).hostname)) throw new Error('Test delivery is local only');
     await env.DB.prepare('INSERT INTO local_test_mail(id,recipient,subject,body,created_at) VALUES (?,?,?,?,?)').bind(crypto.randomUUID(),to,subject,text,Date.now()).run();
-    return;
+    return 'local-test';
   }
   if (env.MAIL_MODE !== 'resend' || !env.RESEND_API_KEY?.startsWith('re_')
     || env.MAIL_FROM !== 'bookings@notify.rockybottomhome.com'
@@ -41,7 +37,7 @@ export async function sendMail(env: AppEnv, to: string, subject: string, text: s
       headers: {
         Authorization: `Bearer ${env.RESEND_API_KEY}`,
         'Content-Type': 'application/json',
-        'Idempotency-Key': crypto.randomUUID(),
+        'Idempotency-Key': deliveryKey ?? crypto.randomUUID(),
       },
       body: JSON.stringify({
         from: `Rocky Bottom <${env.MAIL_FROM}>`,
@@ -55,10 +51,11 @@ export async function sendMail(env: AppEnv, to: string, subject: string, text: s
     if (!sent.ok) throw new Error('Provider rejected the message');
     const result = await sent.json() as { id?: unknown };
     if (typeof result.id !== 'string' || !result.id) throw new Error('Missing message receipt');
+    return result.id;
   } catch {
     // Never expose provider responses, credentials or request contents.
     // A timeout may follow acceptance: don't retry or enable the OTP challenge.
     console.warn('Mail delivery failed', providerStatus ?? 'transport');
-    throw new Error('Email delivery unavailable');
+    throw new MailDeliveryUncertain('Email delivery unavailable');
   }
 }

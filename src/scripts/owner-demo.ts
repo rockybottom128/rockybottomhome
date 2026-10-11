@@ -12,12 +12,12 @@ if (root) {
     { id: 'sample-2', visitorId: 'buyer', revision: 1, mode: 'owner_coordinated', status: 'requested', start: Date.UTC(2026,10,2,19), end: Date.UTC(2026,10,2,20), agentAttending: false, name: 'Sample Buyer', source: 'Public website', detail: 'Stripe ID + selfie verified (sample). Owner-coordinated only; no keybox email.' },
     { id: 'sample-3', visitorId: 'unresolved', revision: 1, mode: 'agent_private', status: 'requested', start: Date.UTC(2026,10,3,16), end: Date.UTC(2026,10,3,17), agentAttending: true, name: 'Agent awaiting contact check', source: 'MLS route · referral not authenticated', detail: 'License found, but business-contact ownership unresolved. Private access blocked.' },
   ];
-  function log(message: string) { const li = document.createElement('li'); li.textContent = message; const logList = document.querySelector('#activity-log')!; logList.insertBefore(li, logList.firstChild); }
+  function log(message: string) { const li = document.createElement('li'); li.textContent = message; const logList = root!.querySelector('#activity-log'); if (!logList) return; logList.insertBefore(li, logList.firstChild); }
   function button(label: string, action: () => void, disabled = false) {
     const el = document.createElement('button'); el.type = 'button'; el.className = 'button secondary'; el.textContent = label; el.disabled = disabled; el.addEventListener('click', action); return el;
   }
   function render() {
-    const list = document.querySelector('#booking-list')!; list.replaceChildren();
+    const list = root!.querySelector('#booking-list'); if (!list) return; list.replaceChildren();
     for (const booking of bookings) {
       const row = document.createElement('article'); row.className = 'booking-row';
       const h = document.createElement('h3'); h.textContent = booking.name;
