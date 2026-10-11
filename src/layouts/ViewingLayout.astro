@@ -3,10 +3,11 @@ import '../styles/viewings.css';
 import SiteVersion from '../components/SiteVersion.astro';
 interface Props { title: string }
 const { title } = Astro.props;
+const dashboardHeader=Astro.slots.has('dashboard-heading');
 const isOwnerPage = Astro.url.pathname === '/owner' || Astro.url.pathname.startsWith('/owner/');
 ---
 <!doctype html>
-<html lang="en">
+<html lang="en" class:list={{'owner-dashboard-page':dashboardHeader}}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -17,8 +18,10 @@ const isOwnerPage = Astro.url.pathname === '/owner' || Astro.url.pathname.starts
   </head>
   <body>
     <a class="skip" href="#main">Skip to content</a>
-    <div class="preview-notice">DESIGN PREVIEW · Bookings, identity checks and home access are not yet enabled.</div>
-    <header class="portal-header"><a class="brand" href="/">R·B <span>ROCKY BOTTOM HOME</span></a><nav aria-label="Viewing navigation"><a href="/viewings">Plan a visit</a><a href="/viewings/status">My bookings</a>{isOwnerPage && <a href="/owner">Owner area</a>}</nav></header>
+    <div class:list={{'dashboard-top':dashboardHeader}} id={dashboardHeader?'dashboard-top':undefined}>
+    <div class="preview-notice">{dashboardHeader?'PRELAUNCH PREVIEW · Booking requests are real. Identity checks and home access remain simulated.':'DESIGN PREVIEW · Bookings, identity checks and home access are not yet enabled.'}</div>
+    <header class:list={['portal-header',{'dashboard-header':dashboardHeader}]}><a class="brand" href="/">R·B <span>ROCKY BOTTOM HOME</span></a>{dashboardHeader?<><slot name="dashboard-heading" /><slot name="dashboard-controls" /></>:<nav aria-label="Viewing navigation"><a href="/viewings">Plan a visit</a><a href="/viewings/status">My bookings</a>{isOwnerPage && <a href="/owner">Owner area</a>}</nav>}</header>
+    </div>
     <main id="main"><slot /></main>
     <footer><span>Rocky Bottom · Sunset, SC</span><a href="/">Return to the home</a><SiteVersion /></footer>
   </body>

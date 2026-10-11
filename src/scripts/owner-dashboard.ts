@@ -25,3 +25,9 @@ bookingToggle.addEventListener('click',async()=>{
   document.getElementById('visitor-settings-reload')!.hidden=false;
  }finally{bookingToggle.removeAttribute('aria-busy');}
 });
+
+const dashboardTop=document.getElementById('dashboard-top');
+if(dashboardTop){
+ const updateOffset=()=>document.documentElement.style.setProperty('--dashboard-top-height',`${dashboardTop.getBoundingClientRect().height}px`);
+ updateOffset();new ResizeObserver(updateOffset).observe(dashboardTop);
+}
