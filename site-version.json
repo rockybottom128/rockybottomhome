@@ -9,6 +9,6 @@
   },
   "change": {
     "level": "feature",
-    "reason": "Persist shared availability and real viewing requests with a live owner calendar, audited approvals, cancellations and booking email"
+    "reason": "Persist shared availability and viewing requests with owner review, booking email and expanded visitor testing allowlists"
   }
 }

@@ -73,3 +73,19 @@ test('owner delivery requires a registered active/invited owner, independent of 
   assert.equal(calls.length,2,'An approved visitor domain reaches the provider');
  }finally{globalThis.fetch=original;}
 });
+
+
+test('configured visitor domains and supplementary private addresses match exactly',()=>{
+ for(const file of ['wrangler.auth-local.json','wrangler.auth-dev.json','wrangler.production.json']){
+  const config=JSON.parse(readFileSync(file,'utf8'));
+  const policy={...env,...config.vars,VISITOR_EMAIL_ADDRESSES:'guest.one@gmail.com, guest.two@yahoo.com'};
+  for(const domain of ['farts.cloud','scottdempsey.com','table42.cafe','transfix.io','trshvac.com','trs-hvac.com']){
+   assert.equal(visitorRecipientAllowed(policy,'Test@'+domain.toUpperCase()),true);
+   assert.equal(visitorRecipientAllowed(policy,'test@sub.'+domain),false);
+   assert.equal(visitorRecipientAllowed(policy,'test@'+domain+'.evil.test'),false);
+  }
+  for(const email of ['guest.one@gmail.com','GUEST.TWO@YAHOO.COM','visitor@example.com'])assert.equal(visitorRecipientAllowed(policy,email),true,email);
+  for(const email of ['another@gmail.com','another@yahoo.com','guest.one+extra@gmail.com','guestone@gmail.com','guest.two@yahoo.com.evil.test'])assert.equal(visitorRecipientAllowed(policy,email),false,email);
+  assert.equal(visitorRecipientAllowed({...policy,VISITOR_EMAIL_ADDRESSES:''},'guest.one@gmail.com'),false);
+ }
+});

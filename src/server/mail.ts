@@ -2,7 +2,7 @@ import { limit } from './rate-limit';
 import { normalizeEmail, type AppEnv } from './env';
 export function visitorRecipientAllowed(env:AppEnv,email:string):boolean {
   const normalized=normalizeEmail(email);
-  const addresses=(env.MAIL_ALLOWED_RECIPIENTS??'').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
+  const addresses=[env.MAIL_ALLOWED_RECIPIENTS,env.VISITOR_EMAIL_ADDRESSES].filter(Boolean).join(',').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
   const domains=(env.VISITOR_EMAIL_DOMAINS??'').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
   const domain=normalized.slice(normalized.lastIndexOf('@')+1);
   return addresses.includes(normalized) || domains.includes(domain);
