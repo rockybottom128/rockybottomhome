@@ -2,7 +2,7 @@ import type { AppEnv } from './env';
 import { validatePeriod, wallTime } from '../lib/viewings/availability.ts';
 import { timeRange } from '../lib/viewings/calendar.ts';
 type ActivityRow = { id:string; created_at:number; actor:string; action:string; subject:string; before_json:string|null; after_json:string|null;booking_start:number|null };
-const actions:Record<string,string>={visitor_profile_saved:'Visitor profile saved · validation simulated',booking_requested:'Viewing requested',booking_approved:'Viewing approved',booking_canceled:'Viewing canceled',owner_invited:'Owner invited',owner_reinvited:'Owner reinvited',owner_removed:'Owner access removed',visitor_demo_enabled:'Visitor demo enabled',visitor_demo_disabled:'Visitor demo disabled',visitor_email_verified:'Visitor email verified',owner_password_reset:'Owner password set or reset'};
+const actions:Record<string,string>={booking_message_queued:'Owner message queued',visitor_profile_saved:'Visitor profile saved · validation simulated',booking_requested:'Viewing requested',booking_approved:'Viewing approved',booking_canceled:'Viewing canceled',owner_invited:'Owner invited',owner_reinvited:'Owner reinvited',owner_removed:'Owner access removed',visitor_demo_enabled:'Visitor demo enabled',visitor_demo_disabled:'Visitor demo disabled',visitor_email_verified:'Visitor email verified',owner_password_reset:'Owner password set or reset'};
 function periodDescription(raw:string|null):string {
  if(!raw)return '';
  try{const p=validatePeriod(JSON.parse(raw));return `${p.kind==='available'?'Available':'Blocked'} · ${p.local_day??(p.weekday===-1?'Every day':`Every ${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][p.weekday!]}`)} · ${timeRange(wallTime(p.start_minute),wallTime(p.end_minute))}`;}

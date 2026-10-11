@@ -40,7 +40,7 @@ async function loadSlots(){
  finally{if(own===generation){loading=false;buttons();}}
 }
 field('agent-attending').addEventListener('change',()=>{el('booking-review').hidden=true;buttons();});
-el('review-request').addEventListener('click',()=>{if(!selected||loading||submitting)return;el('booking-review').hidden=false;el('review-summary').textContent=`${label(selected.day)} · ${timeRange(selected.start,selected.end)} Eastern. Submit to hold this time pending owner approval. Identity and agent checks are simulated. No booking email or access code is issued; check My requests for updates.`;});
+el('review-request').addEventListener('click',()=>{if(!selected||loading||submitting)return;el('booking-review').hidden=false;el('review-summary').textContent=`${label(selected.day)} · ${timeRange(selected.start,selected.end)} Eastern. Submit to hold this time pending owner approval. Identity and agent checks are simulated. Approval and cancellation updates will be emailed. No access code is issued; check My requests for the saved status.`;});
 el('confirm-booking').addEventListener('click',async()=>{
  if(submitting||!selected)return;submitting=true;buttons();el('request-result').textContent='Submitting request…';
  try{

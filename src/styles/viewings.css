@@ -12,3 +12,5 @@
 #shared-activity .log p{margin:4px 0}
 
 .dashboard-settings{margin-top:25px}
+
+.showing-review{align-items:start}.showing-calendar .calendar-nav{text-align:center}.showing-calendar .calendar-day{display:block;text-align:center;text-decoration:none;border:3px solid #cbd4c7;min-height:62px}.showing-calendar .calendar-day small{display:block;min-height:18px;font-size:10px;line-height:1.4}.showing-calendar .has-approved{background:#d6ebd4}.showing-calendar .has-pending{border-color:#d4a500}.showing-calendar .selected-day{outline:2px solid #254b39;outline-offset:1px;font-weight:700;text-decoration:underline}.showing-calendar .outside-month{color:#697469;background-image:linear-gradient(#ffffff55,#ffffff55)}.calendar-legend{display:flex;flex-wrap:wrap;gap:10px}.calendar-legend span{padding:3px 7px;border-radius:4px}.approved-key{background:#d6ebd4}.pending-key{border:3px solid #d4a500}.booking-mail-history{padding-left:20px;overflow-wrap:anywhere}.booking-mail-history li{margin:15px 0}.booking-mail-history pre{white-space:pre-wrap;font:inherit}.stats a{text-decoration:none}.booking-row{overflow-wrap:anywhere}

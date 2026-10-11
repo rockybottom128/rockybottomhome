@@ -1,0 +1,17 @@
+---
+import type {ownerCalendar} from '../server/owner-calendar';
+interface Props {calendar:Awaited<ReturnType<typeof ownerCalendar>>}
+const {calendar:c}=Astro.props;
+const title=new Intl.DateTimeFormat('en-US',{timeZone:'UTC',month:'long',year:'numeric'}).format(new Date(c.month+'-01T12:00:00Z'));
+const label=(day:string)=>new Intl.DateTimeFormat('en-US',{timeZone:'UTC',dateStyle:'full'}).format(new Date(day+'T12:00:00Z'));
+---
+<section class="card showing-calendar" id="showing-calendar" aria-label="Saved showings calendar">
+ <p class="eyebrow">SHOWINGS · EASTERN TIME</p><h2>Select a day to review.</h2>
+ <div class="calendar-nav"><a href={`?month=${c.previous}#showing-calendar`} aria-label="Previous month">←</a><strong>{title}</strong><a href={`?month=${c.next}#showing-calendar`} aria-label="Next month">→</a></div>
+ <div class="calendar-grid">
+ {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=><span class="weekday">{d}</span>)}
+ {c.days.map(day=>{const m=c.markers[day]??{pending:0,approved:0};return <a href={`?month=${day.slice(0,7)}&day=${day}#showing-calendar`} class:list={['calendar-day',{'has-approved':m.approved>0,'has-pending':m.pending>0,'selected-day':day===c.day,'outside-month':!day.startsWith(c.month)}]} aria-current={day===c.day?'date':undefined} aria-label={`${label(day)}: ${m.pending} pending, ${m.approved} approved${day===c.today?', today':''}${day===c.day?', selected':''}`}><span>{Number(day.slice(-2))}</span><small>{m.pending?`${m.pending} P`:''}{m.pending&&m.approved?' · ':''}{m.approved?`${m.approved} A`:''}</small></a>;})}
+ </div>
+ <p class="hint calendar-legend"><span class="approved-key">Green: approved (A)</span><span class="pending-key">Yellow border: pending (P)</span></p>
+ <p class="hint">A day can have both. These markers show saved requests, not open availability. Refresh for changes from other owners.</p><a href={`?month=${c.today.slice(0,7)}&day=${c.today}#showing-calendar`}>Today</a>
+</section>

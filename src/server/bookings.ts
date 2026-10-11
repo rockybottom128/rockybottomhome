@@ -1,3 +1,4 @@
+import {bookingEmailText} from './booking-mail.ts';
 import type {AppEnv} from './env';
 import {readCalendar,unreservedSlots} from './availability.ts';
 import {readProfile} from './visitor-profile.ts';
@@ -64,6 +65,9 @@ export async function changeBooking(env:AppEnv,actor:{ownerId:string}|{visitorId
  const reason=action==='cancel'?(typeof input.reason==='string'?input.reason.trim():''):'';
  if(action==='cancel'&&(reason.length<5||reason.length>1000||/[\u0000-\u001f]/.test(reason)))throw Error('Enter a cancellation reason (5–1000 characters).');
  const now=Date.now(),state=await readCalendar(env),token=crypto.randomUUID(),actorId=owner?actor.ownerId:actor.visitorId;
+ const booking=await env.DB.prepare('SELECT starts_at,ends_at FROM bookings WHERE id=?').bind(id).first<{starts_at:number;ends_at:number}>();
+ if(!booking)throw new BookingConflict('The request is no longer available.');
+ const emailId=crypto.randomUUID();
  const auth=owner?"EXISTS(SELECT 1 FROM owner_accounts WHERE id=? AND status='active')":"EXISTS(SELECT 1 FROM site_settings WHERE key='visitor_demo' AND value='on') AND EXISTS(SELECT 1 FROM bookings WHERE id=? AND visitor_id=?)";
  const status=action==='approve'?'approved':'canceled';
  const allowed=action==='approve'?"status='requested' AND starts_at>? AND validation_status='simulated_pass'":"status IN ('requested','approved') AND ends_at>?";
@@ -72,7 +76,10 @@ export async function changeBooking(env:AppEnv,actor:{ownerId:string}|{visitorId
   env.DB.prepare(`UPDATE calendar_state SET revision=revision+1,mutation_id=?,updated_at=?,updated_by=? WHERE id=1 AND revision=? AND ${auth} AND EXISTS(SELECT 1 FROM bookings WHERE id=? AND revision=? AND ${allowed})`).bind(token,now,owner?actorId:null,state.revision,...(owner?[actorId]:[id,actorId]),id,revision,now),
   env.DB.prepare(`UPDATE bookings SET status=?,revision=revision+1,cancellation_reason=? WHERE id=? AND ${guard}`).bind(status,reason,id,token),
   env.DB.prepare(`INSERT INTO audit_events(id,actor_id,action,subject_id,created_at) SELECT ?,?,?,?,? WHERE ${guard}`).bind(crypto.randomUUID(),actorId,action==='approve'?'booking_approved':'booking_canceled',id,now,token),
+  env.DB.prepare(`UPDATE email_outbox SET status='canceled' WHERE booking_id=? AND status IN ('pending','failed') AND ${guard}`).bind(id,token),
+  env.DB.prepare(`INSERT INTO email_outbox(id,booking_id,booking_revision,kind,deduplication_key,due_at,status,payload_json,created_at,actor_id) SELECT ?,?,?,'confirmation',?,?,'pending',?,?,? WHERE ${guard}`).bind(emailId,id,Number(revision)+1,`booking:${id}:${Number(revision)+1}`,now,JSON.stringify({subject:`Rocky Bottom viewing ${status}`,text:bookingEmailText(status,booking.starts_at,booking.ends_at,reason,env.APP_ORIGIN)}),now,actorId,token),
+  ...(action==='cancel'?[env.DB.prepare(`INSERT INTO booking_cancellations(booking_id,booking_revision,actor_id,reason,notification_authorized,created_at) SELECT ?,?,?,?,1,? WHERE ${guard}`).bind(id,Number(revision)+1,actorId,reason,now,token)]:[]),
  ]);
  if(results[0].meta.changes!==1)throw new BookingConflict('The request changed, access changed, or the visit has passed. Reload before trying again.');
- return {id,status};
+ return {id,status,emailId};
 }

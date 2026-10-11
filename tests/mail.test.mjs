@@ -19,11 +19,11 @@ test('Resend contract, privacy, failure handling and sending restrictions',async
  const original=globalThis.fetch;let calls=[];
  try {
   globalThis.fetch=async(url,options)=>{calls.push({url,options});return Response.json({id:'message-receipt'})};
-  await sendMail(env,'visitor@example.com','Verify your email','Your code is 12345678.');
+  assert.equal(await sendMail(env,'visitor@example.com','Verify your email','Your code is 12345678.','visitor','booking-fixture-key'),'message-receipt');
   assert.equal(calls.length,1);assert.equal(calls[0].url,'https://api.resend.com/emails');
   const {options}=calls[0],payload=JSON.parse(options.body);
   assert.equal(options.headers.Authorization,'Bearer '+env.RESEND_API_KEY);
-  assert.equal(options.redirect,'manual');assert.ok(options.signal);assert.ok(options.headers['Idempotency-Key']);
+  assert.equal(options.redirect,'manual');assert.ok(options.signal);assert.equal(options.headers['Idempotency-Key'],'booking-fixture-key');
   assert.deepEqual(payload,{from:'Rocky Bottom <bookings@notify.rockybottomhome.com>',reply_to:'bookings@rockybottomhome.com',to:['visitor@example.com'],subject:'Verify your email',text:'Your code is 12345678.'});
   for(const [changed,to,subject] of [[{},'stranger@example.com','test'],[{},'visitor@example.com','bad\r\nBcc: someone'],[{MAIL_REPLY_TO:'personal@example.com'},'visitor@example.com','test'],[{RESEND_API_KEY:''},'visitor@example.com','test'],[{MAIL_MODE:'test'},'visitor@example.com','test']]) {
    await assert.rejects(sendMail({...env,...changed},to,subject,'body'));
