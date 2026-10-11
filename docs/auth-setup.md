@@ -95,7 +95,7 @@ The public visitor API cannot select owner-mail delivery. Only authenticated
 active owners can create invitations. Existing rate limits and the visitor-demo
 switch remain enforced. This policy was deployed with PR #9 at 0.3.1.0; future source edits still require reviewed promotion to change live behavior.
 
-Availability rules and dated exceptions now use D1 through migration 0005. New visitor bookings are real D1 records with migration 0006. Historical browser-local examples and the separate dashboard samples remain fictional and are never imported. No browser examples or legacy scaffold availability records are imported. See [calendar availability](calendar-availability.md) for precedence, time-zone rules, concurrency and migration review. This describes the local 0.4.0.0 candidate; remote environments remain at the last verified release until separately published.
+Availability rules and dated exceptions now use D1 through migration 0005. New visitor bookings are real D1 records with migration 0006. Historical browser-local examples and the separate dashboard samples remain fictional and are never imported. No browser examples or legacy scaffold availability records are imported. See [calendar availability](calendar-availability.md) for precedence, time-zone rules, concurrency and migration review. The 0.4.0.0 candidate is now published to shared dev; production remains at its prior release. See the environment runbook for deployment evidence.
 
 ## Owner activity history
 

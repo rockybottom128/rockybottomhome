@@ -1,6 +1,6 @@
 # Saved visitor profiles and real viewing requests
 
-Part of the unpublished prelaunch 0.4.0.0 batch, extended by owner request after availability testing. Email verification and D1 availability were already real. This update makes profile storage and booking submission real as well; it is not official launch or real identity/license verification.
+Part of the shared-dev prelaunch 0.4.0.0 batch (production promotion remains pending), extended by owner request after availability testing. Email verification and D1 availability were already real. This update makes profile storage and booking submission real as well; it is not official launch or real identity/license verification.
 
 ## Visitor flow
 
