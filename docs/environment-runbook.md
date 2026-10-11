@@ -196,3 +196,9 @@ The machine's historical review-only pre-push hook blocks all refs, including de
 ## Visitor allowlist additions — 2026-10-11
 
 The next feature-branch update adds three visitor domains and support for additive private `VISITOR_EMAIL_ADDRESSES` exceptions. The operator has staged five requested exact-address additions privately; do not replace the existing `MAIL_ALLOWED_RECIPIENTS` list or publish private address values in Git. The additive private binding was provisioned on shared dev on 2026-10-11; the corresponding source is published through the feature/dev workflow. Production settings remain unchanged. See [authentication guidance](auth-setup.md#additional-visitor-testing-allowlist--2026-10-11) for provisioning before deployment. Existing verification gates, rate limits and owner-mail policy remain unchanged.
+
+## Visitor allowlist migration 0008 — pending release preparation
+
+The next local candidate adds three allowlist tables and owner-only list APIs. Apply 0008 before this code. Runtime atomically imports the current environment's six configured domains and all existing private address exceptions once; those settings are never reapplied after initialization. Domain/email edits then persist in D1, with owner attribution and list revision checks. No credential changes or new seed secrets are required in dev: existing private bindings are preserved and imported at runtime. See [allowlist migration and rollback](visitor-allowlist.md).
+
+Production remains separately authorized: capture the database backup/recovery point, review pending 0005–0008 migrations and ensure desired initial private exceptions are provisioned before first policy read. Rolling back to environment-only code can restore access an owner removed in D1; pause visitor access and reconcile before rollback. Do not reset accounts, existing requests or the initialization flag. Local and isolated tests do not establish remote cross-device behavior.

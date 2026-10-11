@@ -1,12 +1,7 @@
 import { limit } from './rate-limit';
 import { normalizeEmail, type AppEnv } from './env';
-export function visitorRecipientAllowed(env:AppEnv,email:string):boolean {
-  const normalized=normalizeEmail(email);
-  const addresses=[env.MAIL_ALLOWED_RECIPIENTS,env.VISITOR_EMAIL_ADDRESSES].filter(Boolean).join(',').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
-  const domains=(env.VISITOR_EMAIL_DOMAINS??'').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
-  const domain=normalized.slice(normalized.lastIndexOf('@')+1);
-  return addresses.includes(normalized) || domains.includes(domain);
-}
+export {allowedVisitorEmail as visitorRecipientAllowed} from './visitor-allowlist';
+import {allowedVisitorEmail as visitorRecipientAllowed} from './visitor-allowlist';
 /** Callers authorize recipients and build subjects; owner messages allow bounded text. Never log provider payloads or credentials. */
 export class MailDeliveryUncertain extends Error { readonly uncertain=true; }
 export async function sendMail(env: AppEnv, to: string, subject: string, text: string, purpose: 'visitor' | 'owner' = 'visitor', deliveryKey?:string): Promise<string> {
@@ -17,7 +12,7 @@ export async function sendMail(env: AppEnv, to: string, subject: string, text: s
     // active or invited owner. The public visitor API cannot select this purpose.
     const owner=await env.DB.prepare("SELECT id FROM owner_accounts WHERE email_normalized=? AND status IN ('active','invited')").bind(to).first();
     if(!owner)throw new Error('Owner recipient is not authorized');
-  } else if(!visitorRecipientAllowed(env,to)) {
+  } else if(!await visitorRecipientAllowed(env,to)) {
     throw new Error('This email is not enabled for visitor testing.');
   }
   await limit(env,'mail-global',100,86400000);

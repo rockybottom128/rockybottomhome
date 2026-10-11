@@ -131,6 +131,22 @@ try {
  assert.equal((await (await fetch(slotPath,{headers:{cookie:visitorCookie}})).json()).slots.length,7);
  const freshCalendar=await calendar();
  assert.equal((await change({revision:freshCalendar.revision,action:'add',period:{...available,kind:'blocked',local_day:tomorrow,weekday:null}})).status,409,'Cannot silently block a real hold');
+ // Owner-managed D1 allowlist: private reads, stale edits, and existing-session exclusion.
+ assert.equal((await fetch(base+'/api/owner/visitor-allowlist')).status,401);
+ assert.equal((await fetch(base+'/api/owner/visitor-allowlist',{headers:{cookie:visitorCookie}})).status,401);
+ const readList=async()=>await (await fetch(base+'/api/owner/visitor-allowlist',{headers:{cookie:ownerCookie}})).json();
+ let accessList=await readList();const visitorEntry=accessList.entries.find(e=>e.value==='visitor@example.com');assert.ok(visitorEntry);
+ const removeAccess={action:'remove',id:visitorEntry.id,revision:accessList.revision};
+ assert.equal((await post('/api/owner/visitor-allowlist',removeAccess,visitorCookie)).status,401);
+ assert.equal((await post('/api/owner/visitor-allowlist',removeAccess,secondCookie)).status,401);
+ assert.equal((await post('/api/owner/visitor-allowlist',removeAccess,ownerCookie,'https://attacker.invalid')).status,400);
+ assert.equal((await post('/api/owner/visitor-allowlist',removeAccess,ownerCookie)).status,200);
+ assert.equal((await fetch(slotPath,{headers:{cookie:visitorCookie}})).status,401);
+ assert.equal(db.prepare('SELECT COUNT(*) n FROM bookings').get().n,1,'Removing access never cancels a booking');
+ assert.equal((await post('/api/owner/visitor-allowlist',removeAccess,ownerCookie)).status,409);
+ accessList=await readList();
+ assert.equal((await post('/api/owner/visitor-allowlist',{action:'add',kind:'email',value:'visitor@example.com',revision:accessList.revision},ownerCookie)).status,200);
+ assert.equal((await fetch(slotPath,{headers:{cookie:visitorCookie}})).status,200);
  const ownRequests=await (await fetch(base+'/api/visitor/bookings',{headers:{cookie:visitorCookie}})).json();assert.equal(ownRequests.bookings[0].id,booking.id);assert.ok(!('profile_snapshot' in ownRequests.bookings[0]));
  assert.equal((await post('/api/owner/bookings',{id:booking.id,revision:1,action:'approve',acknowledge_simulation:true},visitorCookie)).status,401);
  assert.equal((await post('/api/owner/bookings',{id:booking.id,revision:1,action:'approve'},ownerCookie)).status,400);

@@ -4,7 +4,7 @@ import { sendMail, visitorRecipientAllowed } from './mail';
 import { limit, RateLimitError } from './rate-limit';
 export { limit } from './rate-limit';
 export async function sendVisitorCode(env:AppEnv,email:string,ip:string) {
-  if(!visitorRecipientAllowed(env,email))throw new Error('This email is not enabled for visitor testing. Use an approved test address or domain.');
+  if(!await visitorRecipientAllowed(env,email))throw new Error('This email is not enabled for visitor testing. Use an approved test address or domain.');
   await limit(env,'send-ip:'+ip,10,3600000);
   const now=Date.now(),generation=token(),otp=code();
   await env.DB.prepare('INSERT INTO visitors(id,email_normalized,created_at) VALUES (?,?,?) ON CONFLICT(email_normalized) DO NOTHING').bind(crypto.randomUUID(),email,now).run();
@@ -24,6 +24,7 @@ export async function sendVisitorCode(env:AppEnv,email:string,ip:string) {
 }
 export async function verifyVisitorCode(env:AppEnv,email:string,entered:string,ip:string):Promise<string|null> {
   await limit(env,'verify-ip:'+ip,30,60000);
+  if(!await visitorRecipientAllowed(env,email))return null;
   if (!/^\d{8}$/.test(entered)) return null;
   const now=Date.now();
   const row=await env.DB.prepare(`UPDATE email_challenges SET attempts=attempts+1 WHERE visitor_id=(SELECT id FROM visitors WHERE email_normalized=?) AND attempts<5 AND consumed_at IS NULL AND expires_at>? AND delivery='sent' RETURNING visitor_id,generation,code_digest`).bind(email,now).first<{visitor_id:string;generation:string;code_digest:string}>();
@@ -42,5 +43,6 @@ export function visitorCookie(env:AppEnv,value:string,maxAge=3600) { return `rb-
 export async function getVisitor(env:AppEnv,request:Request) {
   const value=request.headers.get('cookie')?.split(';').map(s=>s.trim()).find(s=>s.startsWith('rb-visitor='))?.slice(11);
   if (!value || !/^[a-f0-9]{64}$/.test(value)) return null;
-  return env.DB.prepare('SELECT v.id,v.email_normalized,v.email_verified_at FROM visitors v JOIN visitor_sessions s ON s.visitor_id=v.id WHERE s.token_digest=? AND s.expires_at>? AND s.revoked_at IS NULL').bind(await digest(value,env.OTP_SECRET),Date.now()).first<{id:string;email_normalized:string;email_verified_at:number}>();
+  const visitor=await env.DB.prepare('SELECT v.id,v.email_normalized,v.email_verified_at FROM visitors v JOIN visitor_sessions s ON s.visitor_id=v.id WHERE s.token_digest=? AND s.expires_at>? AND s.revoked_at IS NULL').bind(await digest(value,env.OTP_SECRET),Date.now()).first<{id:string;email_normalized:string;email_verified_at:number}>();
+  return visitor&&await visitorRecipientAllowed(env,visitor.email_normalized)?visitor:null;
 }

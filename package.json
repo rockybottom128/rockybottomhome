@@ -54,7 +54,7 @@
 		"test:auth-dev-policy": "node --test tests/auth-dev-policy.test.mjs tests/dev-snapshot.test.mjs",
 		"test:build-target": "node --test tests/build-target.test.mjs",
 		"test:availability": "node --experimental-strip-types --test tests/availability.test.mjs",
-		"test:booking": "node --experimental-strip-types --test tests/visitor-profile.test.mjs tests/bookings.test.mjs"
+		"test:booking": "node --experimental-strip-types --test tests/visitor-profile.test.mjs tests/bookings.test.mjs tests/allowlist.test.mjs"
 	},
 	"type": "module"
 }
