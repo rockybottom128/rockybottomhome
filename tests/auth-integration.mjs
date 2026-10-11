@@ -182,6 +182,24 @@ try {
  assert.equal(db.prepare("SELECT COUNT(*) n FROM local_test_mail WHERE subject='Message about your Rocky Bottom viewing'").get().n,1);
  const pendingDashboard=await (await fetch(base+`/owner/dashboard/?month=${tomorrow.slice(0,7)}&day=${tomorrow}`,{headers:{cookie:ownerCookie}})).text();
  assert.match(pendingDashboard,/has-pending/);assert.match(pendingDashboard,/Please reply if you need directions/);assert.match(pendingDashboard,/Pending review/);
+ // Real website conversations use the same authenticated sessions, but do not send email.
+ const conversationInput={action:'create',subject:'Question before our viewing',body:'Can our agent join us? '+ '好'.repeat(1400),request_key:crypto.randomUUID()};
+ for(const role of ['owner','visitor'])assert.equal((await fetch(base+'/api/'+role+'/messages')).status,401);
+ assert.equal((await post('/api/visitor/messages',conversationInput,visitorCookie,'https://attacker.invalid')).status,400);
+ assert.equal((await post('/api/owner/messages',conversationInput,visitorCookie)).status,401);
+ const started=await post('/api/visitor/messages',conversationInput,visitorCookie);assert.equal(started.status,200);const thread=await started.json();
+ assert.equal((await (await post('/api/visitor/messages',conversationInput,visitorCookie)).json()).id,thread.id);
+ const inbox=await (await fetch(base+'/api/owner/messages',{headers:{cookie:ownerCookie}})).json();assert.equal(inbox.threads[0].status,'needs_owner');
+ assert.match(await (await fetch(base+'/owner/dashboard/',{headers:{cookie:ownerCookie}})).text(),/data-message-count>1</);
+ const answer={action:'reply',thread_id:thread.id,revision:1,body:'Yes, your agent is welcome.',request_key:crypto.randomUUID()};
+ assert.equal((await post('/api/owner/messages',answer,secondCookie)).status,401);
+ assert.equal((await post('/api/owner/messages',answer,ownerCookie)).status,200);
+ const full=await (await fetch(base+'/api/visitor/messages?thread='+thread.id,{headers:{cookie:visitorCookie}})).json();assert.equal(full.entries.length,2);assert.equal(full.thread.status,'waiting_visitor');assert.equal(full.entries[1].actor_label,'Owner');
+ assert.equal((await post('/api/visitor/messages',{...answer,request_key:crypto.randomUUID()},visitorCookie)).status,409);
+ assert.equal((await fetch(base+'/viewings/messages/',{headers:{cookie:visitorCookie}})).status,200);
+ await post('/api/owner/visitor-demo',{enabled:false},ownerCookie);
+ assert.equal((await fetch(base+'/api/visitor/messages',{headers:{cookie:visitorCookie}})).status,403);
+ await post('/api/owner/visitor-demo',{enabled:true},ownerCookie);
  const approvedResponse=await post('/api/owner/bookings',{id:booking.id,revision:1,action:'approve',acknowledge_simulation:true},ownerCookie);
  assert.equal(approvedResponse.status,200);assert.equal((await approvedResponse.json()).emailStatus,'sent');
  const approvedDashboard=await (await fetch(base+`/owner/dashboard/?month=${tomorrow.slice(0,7)}&day=${tomorrow}`,{headers:{cookie:ownerCookie}})).text();assert.match(approvedDashboard,/has-approved/);

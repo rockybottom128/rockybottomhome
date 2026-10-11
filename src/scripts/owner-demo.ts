@@ -60,7 +60,7 @@ if (root) {
     document.querySelector('#owner-account-result')!.textContent = owners.length === 1 ? 'The last active owner cannot be removed.' : '';
   }
   root.querySelector('#add-owner')?.addEventListener('click', () => { owners.push(`Sample Owner ${nextOwner++}`); log('Fictional owner added; no invitation sent.'); renderOwners(); });
-  document.querySelector('#sample-reply')!.addEventListener('click', () => {
+  document.querySelector('#sample-reply')?.addEventListener('click', () => {
     document.querySelector('#reply-result')!.textContent = 'Sample owner reply: “Yes, use your private booking page to send questions and feedback.”'; log('Sample reply added to the conversation.');
   });
   render(); renderOwners();

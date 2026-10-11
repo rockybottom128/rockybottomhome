@@ -20,7 +20,7 @@ const isOwnerPage = Astro.url.pathname === '/owner' || Astro.url.pathname.starts
     <a class="skip" href="#main">Skip to content</a>
     <div class:list={{'dashboard-top':dashboardHeader}} id={dashboardHeader?'dashboard-top':undefined}>
     <div class="preview-notice">{dashboardHeader?'PRELAUNCH PREVIEW · Booking requests are real. Identity checks and home access remain simulated.':'DESIGN PREVIEW · Bookings, identity checks and home access are not yet enabled.'}</div>
-    <header class:list={['portal-header',{'dashboard-header':dashboardHeader}]}><a class="brand" href="/">R·B <span>ROCKY BOTTOM HOME</span></a>{dashboardHeader?<><slot name="dashboard-heading" /><slot name="dashboard-controls" /></>:<nav aria-label="Viewing navigation"><a href="/viewings">Plan a visit</a><a href="/viewings/status">My bookings</a>{isOwnerPage && <a href="/owner">Owner area</a>}</nav>}</header>
+    <header class:list={['portal-header',{'dashboard-header':dashboardHeader}]}><a class="brand" href="/">R·B <span>ROCKY BOTTOM HOME</span></a>{dashboardHeader?<><slot name="dashboard-heading" /><slot name="dashboard-controls" /></>:<nav aria-label="Viewing navigation"><a href="/viewings">Plan a visit</a><a href="/viewings/status">My bookings</a><a href="/viewings/messages/">My messages</a>{isOwnerPage && <a href="/owner">Owner area</a>}</nav>}</header>
     </div>
     <main id="main"><slot /></main>
     <footer><span>Rocky Bottom · Sunset, SC</span><a href="/">Return to the home</a><SiteVersion /></footer>

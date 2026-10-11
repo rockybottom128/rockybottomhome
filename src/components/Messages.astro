@@ -1,0 +1,37 @@
+---
+import '../styles/messages.css';
+interface Props {owner?:boolean;demo?:boolean}
+const {owner=false,demo=false}=Astro.props;
+---
+<section class="card messages" id="messages" data-messages data-role={owner?'owner':'visitor'} data-demo={String(demo)}>
+ <div class="messages-heading"><div><p class="eyebrow">{demo?'LOCAL SAMPLE · FICTIONAL CONVERSATIONS':'CONVERSATIONS · SAVED ON THIS WEBSITE'}</p><h2>{owner?'Messages':'My messages'}</h2></div><button type="button" class="button secondary" data-refresh>Refresh messages</button></div>
+ <p class="hint">{owner?'All owners share this inbox. Reading a thread does not clear its needs-reply status.':'Ask a question or reply to an owner here. Each topic has its own conversation.'} Messages stay on this website; message notification emails are not enabled yet.</p>
+ {demo&&<p class="inset">Local layout preview. Changes here are fictional, stay in this tab, and reset on reload. <button type="button" class="text-button" data-switch-role>Switch to visitor view</button></p>}
+ <p class="message-notice" role="status" aria-live="polite" data-message-notice>Loading messages…</p>
+ <div class="message-workspace">
+  <aside class="message-sidebar" aria-label="Visitors and conversations">
+   <button class="button" type="button" data-new>New conversation</button>
+   <label>Find a conversation<input type="search" data-search placeholder="Email or subject" /></label>
+   <label class="check" data-attention-filter><input type="checkbox" data-needs /> Needs owner reply only</label>
+   <div data-visitors class="message-visitors"></div>
+  </aside>
+  <div class="message-detail" data-detail>
+   <button class="text-button message-back" type="button" data-back>← Visitor list</button>
+   <div data-thread-list></div>
+   <div data-history><p class="message-empty">Choose a visitor to read their conversations, or start a new one.</p></div>
+   <form data-compose hidden>
+    <div data-new-fields>
+     <label>Visitor<select data-recipient required></select></label>
+     <label>Subject<input data-subject required maxlength="120" placeholder="What would you like to discuss?" /></label>
+    </div>
+    <label><span data-composer-label>Message</span><textarea data-body required maxlength="2000" rows="5" placeholder="Write your message here…"></textarea></label>
+    <p class="hint">Up to 2,000 characters. Your message will be visible to this visitor and all active owners.</p>
+    <p class="hint" data-reply-help hidden></p>
+    <button class="button" type="submit" data-send>Send message</button>
+   </form>
+   <div data-close-thread hidden></div>
+  </div>
+ </div>
+ <noscript>Enable JavaScript to load and send messages.</noscript>
+</section>
+<script>import '../scripts/messages';</script>
