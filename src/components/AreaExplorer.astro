@@ -9,8 +9,8 @@ import photos from '../data/area-photos.json';
       {places.map((place, index) => {
         const photo = photos[place.id as keyof typeof photos];
         return <article class="area-slide" hidden={index !== 0} data-area-slide>
-          <div class="area-photo"><img src={photo.url} alt={photo.alt} loading="lazy" width="1400" height="950" draggable="false" /><span class="area-photo-count">{index + 1} / {places.length}</span><button class="photo-arrow photo-prev" data-area-step="-1" aria-label="Previous attraction">‹</button><button class="photo-arrow photo-next" data-area-step="1" aria-label="Next attraction">›</button></div>
-          <div class="area-description"><p class="eyebrow">{place.category}</p><h3>{place.name}</h3><p>{place.description}</p><div class="area-links">{place.links.map(link => <a href={link.url} target="_blank" rel="noreferrer">{link.label} ↗</a>)}</div><p class="area-credit">Photo: <a href={photo.source} target="_blank" rel="noreferrer">{photo.author}</a> · <a href={photo.licenseUrl} target="_blank" rel="noreferrer">{photo.license}</a><span> {photo.note}</span></p></div>
+          <div class="area-photo"><img style={'fit' in photo ? `object-fit: ${photo.fit}` : undefined} src={photo.url} alt={photo.alt} loading="lazy" width="1400" height="950" draggable="false" /><span class="area-photo-count">{index + 1} / {places.length}</span><button class="photo-arrow photo-prev" data-area-step="-1" aria-label="Previous attraction">‹</button><button class="photo-arrow photo-next" data-area-step="1" aria-label="Next attraction">›</button></div>
+          <div class="area-description"><p class="eyebrow">{place.category}</p><h3>{place.name}</h3><p>{place.description}</p><div class="area-links">{place.links.map(link => <a href={link.url} target="_blank" rel="noreferrer">{link.label} ↗</a>)}</div><p class="area-credit">Photo source: <a href={photo.source} target="_blank" rel="noreferrer">{photo.author}</a>{photo.license && photo.licenseUrl && <> · <a href={photo.licenseUrl} target="_blank" rel="noreferrer">{photo.license}</a></>}<span> {photo.note}</span></p></div>
         </article>;
       })}
     </div>

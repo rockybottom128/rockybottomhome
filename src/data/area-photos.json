@@ -1,63 +1,55 @@
 {
   "brevard": {
-    "url": "/area/brevard.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Downtown_Brevard_North_Carolina.jpg",
-    "author": "Gmgmarshall",
-    "license": "Public domain (author dedication)",
-    "licenseUrl": "https://commons.wikimedia.org/wiki/File:Downtown_Brevard_North_Carolina.jpg",
-    "alt": "Brevard, NC downtown",
-    "note": "Downtown Brevard, archival photo (2006). Resized; cropped in layout.",
-    "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/1/15/Downtown_Brevard_North_Carolina.jpg"
+    "url": "/area/brevard-nc.png",
+    "source": "https://www.ourstate.com/fall-adventures-yadkin-county-brevard-jackson-county-nc/",
+    "author": "Our State, credited to Transylvania County TDA",
+    "license": null,
+    "licenseUrl": null,
+    "alt": "Downtown Brevard beneath misty, forested Blue Ridge foothills",
+    "note": "Cropped by site owner; cropped in layout.",
+    "originalUrl": "https://ourstate.s3.amazonaws.com/assets/1933/09/SEP24-Transylvania-Co_Downtown-Brevard-Aerial-View.jpg"
   },
   "table-rock": {
-    "url": "/area/table-rock.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:TableRockMountain.jpg",
-    "author": "Clemson3564",
-    "license": "CC BY 3.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
-    "alt": "Table Rock State Park, SC",
-    "note": "Resized; cropped in layout.",
-    "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/b/bb/TableRockMountain.jpg"
+    "url": "/area/table-rock-scenic.png",
+    "source": "https://www.daveallenphotography.com/",
+    "author": "Dave Allen Photography",
+    "license": null,
+    "licenseUrl": null,
+    "alt": "Table Rock above a lake and autumn-colored forest beneath a dramatic sky",
+    "note": "Photographer’s watermark retained.",
+    "originalUrl": "https://www.daveallenphotography.com/",
+    "fit": "contain"
   },
   "greenville": {
-    "url": "/area/greenville.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Falls_Park_Greenville_2017.jpg",
-    "author": "Antony-22",
-    "license": "CC BY-SA 4.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "alt": "Greenville, SC \u2014 Falls Park",
-    "note": "Resized; cropped in layout.",
-    "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/a/a2/Falls_Park_Greenville_2017.jpg"
+    "url": "/area/greenville-sunset.jpeg",
+    "source": "https://www.instagram.com/vanzeppelinaerial",
+    "author": "@vanzeppelinaerial",
+    "license": null,
+    "licenseUrl": null,
+    "alt": "Liberty Bridge, Falls Park, and downtown Greenville at sunset",
+    "note": "Cropped in layout.",
+    "originalUrl": "https://gvltoday.6amcity.com/conde-nast-best-small-cities"
   },
   "french-broad": {
-    "url": "/area/french-broad.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:French_Broad_River.jpg",
-    "author": "Addicted2Karaoke",
-    "license": "CC BY-SA 4.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "alt": "French Broad River",
-    "note": "Resized; cropped in layout.",
-    "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/6/65/French_Broad_River.jpg"
-  },
-  "pisgah": {
-    "url": "/area/pisgah.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Looking_Glass_Rock.jpg",
-    "author": "bradploeger",
-    "license": "CC BY-SA 2.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0/",
-    "alt": "Looking Glass Rock in Pisgah National Forest",
-    "note": "Resized; cropped in layout.",
-    "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/b/b2/Looking_Glass_Rock.jpg"
+    "url": "/area/french-broad-rafting.jpg",
+    "source": "https://www.frenchbroadrafting.com/trip/half-day-whitewater-rafting-lunch",
+    "author": "French Broad Adventures",
+    "license": null,
+    "licenseUrl": null,
+    "alt": "Rafters paddling through splashing whitewater rapids and rocks on the French Broad River",
+    "note": "Whitewater rafting on the French Broad River. Cropped in layout.",
+    "originalUrl": "https://cdn.prod.website-files.com/626bd005d273233572633404/627e6a70ff7686a2c6192040_rafting-DSC_4341.JPG",
+    "rightsStatus": "Public-use permission has not been verified."
   },
   "caesars-head": {
-    "url": "/area/caesars-head.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Fall_colors_at_Mountain_Bridge_Wilderness_Area.jpg",
-    "author": "-ted",
-    "license": "CC BY 2.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by/2.0/",
-    "alt": "Fall colors at Mountain Bridge Wilderness Area, Caesars Head State Park",
-    "note": "Resized; cropped in layout.",
-    "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/3/37/Fall_colors_at_Mountain_Bridge_Wilderness_Area.jpg"
+    "url": "/area/caesars-head-scenic.png",
+    "source": "https://caesarsheadsc.org/",
+    "author": "Caesars Head guide / Second Star Guide",
+    "license": null,
+    "licenseUrl": null,
+    "alt": "Raven on a rocky ledge overlooking a forested mountain valley and waterfall",
+    "note": "Cropped in layout.",
+    "originalUrl": "https://caesarsheadsc.org/"
   },
   "asheville": {
     "url": "/area/asheville.jpg",
@@ -70,13 +62,35 @@
     "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/0/0e/Asheville_at_dusk.jpg"
   },
   "lakes": {
-    "url": "/area/lakes.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Jocassee.jpg",
-    "author": "Mwanner",
-    "license": "CC BY-SA 3.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
-    "alt": "Lake Jocassee, South Carolina",
-    "note": "Photo shows Lake Jocassee. Resized; cropped in layout.",
-    "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/d/dd/Jocassee.jpg"
+    "url": "/area/lake-jocassee-sunset.jpg",
+    "source": "https://daveallenphotography.com/jocassee_gold.php",
+    "author": "Dave Allen Photography — Jocassee Gold",
+    "license": null,
+    "licenseUrl": null,
+    "alt": "Sunset over Lake Jocassee, forested islands, and autumn mountains from Jumping Off Rock",
+    "note": "Photo shows Lake Jocassee from Jumping Off Rock. Cropped in layout.",
+    "originalUrl": "https://daveallenphotography.com/gallery/jocassee_gold.jpg",
+    "rightsStatus": "All rights reserved; public-use permission or a web license has not been verified."
+  },
+  "blue-ridge": {
+    "url": "/area/blueridgemtns.jpg",
+    "source": "https://www.outsideonline.com/adventure-travel/destinations/best-of-the-blue-ridge-mountains/",
+    "author": "Destination McDowell, via Outside",
+    "license": null,
+    "licenseUrl": null,
+    "alt": "Hiker on a rocky overlook above a forested gorge in the Blue Ridge Mountains",
+    "note": "Cropped in layout.",
+    "originalUrl": "https://www.outsideonline.com/adventure-travel/destinations/best-of-the-blue-ridge-mountains/"
+  },
+  "blue-ridge-parkway": {
+    "url": "/area/blue-ridge-parkway.png",
+    "source": "https://www.daveallenphotography.com/",
+    "author": "Dave Allen Photography",
+    "license": null,
+    "licenseUrl": null,
+    "alt": "Blue Ridge Parkway viaduct curving through autumn foliage with mountains beyond",
+    "note": "Photographer’s watermark retained.",
+    "originalUrl": "https://www.daveallenphotography.com/",
+    "fit": "contain"
   }
 }

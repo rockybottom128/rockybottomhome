@@ -1,14 +1,14 @@
 {
   "schema": 1,
-  "version": "0.4.1.0",
+  "version": "0.4.1.1",
   "stage": "prelaunch",
   "base": {
-    "commit": "f10871d8e3c2bc98491d50b181da3d3c87f093d9",
-    "version": "0.4.0.0",
+    "commit": "aed7e53cf5bea370c7574fbdbc7fbda47b2e1c1c",
+    "version": "0.4.1.0",
     "stage": "prelaunch"
   },
   "change": {
-    "level": "update",
-    "reason": "Owner-directed 0.4 series update: shared visitor conversations with reply tracking and single-action thread closure"
+    "level": "minor",
+    "reason": "Refresh area destination photos and credits, add Blue Ridge Parkway guide, and update park descriptions"
   }
 }
