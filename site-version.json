@@ -1,14 +1,14 @@
 {
   "schema": 1,
-  "version": "0.4.1.1",
+  "version": "0.4.1.2",
   "stage": "prelaunch",
   "base": {
-    "commit": "ae0e09fb0e7a4a819d406eaf2cd4d044d0138668",
+    "commit": "7f1609d0c23b1f0c0a3abef0252538aca56b4371",
     "version": "0.4.1.1",
     "stage": "prelaunch"
   },
   "change": {
-    "level": "none",
-    "reason": "Document existing Linux App contributor setup and align unverified Windows guidance with current publishing workflow"
+    "level": "minor",
+    "reason": "Confirm the home is single story in the property details"
   }
 }
