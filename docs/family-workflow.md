@@ -4,7 +4,7 @@ Repository: https://github.com/rockybottom128/rockybottomhome. Production: https
 
 ## Setup
 
-Read [Windows setup](windows-setup.md) for Karen's local machine, and [AGENTS.md](../AGENTS.md) for contributor instructions. GitHub clones include the instructions automatically. Use individual GitHub accounts with ordinary repository write access; never share the owner's credentials. Shared ChatGPT materials do not synchronize repository files or grant GitHub access.
+Read [Linux development access](linux-development-access.md) for Scott and Karen's separate Linux accounts on this PC, and `AGENTS.md` for contributor instructions. Their existing per-user Apps and credentials remain outside Git and must not be replaced with owner authentication. The [Windows setup guide](windows-setup.md) is an unverified starting point for a future Windows PC; its personal-account login is not the procedure for these Linux sessions. Other contributor machines may use individual accounts with ordinary write access. Shared project materials do not synchronize checkouts or grant GitHub access.
 
 ## Local editing
 
@@ -33,7 +33,7 @@ These previews support the production Worker check and source review; use the sh
 
 ## Contributor submission
 
-1. Run the build, TypeScript check, and `git diff --check`; inspect relevant desktop/mobile behavior and staged changes.
+1. Prepare version metadata and run the current validation required by `AGENTS.md` and [versioning](versioning.md); inspect relevant desktop/mobile behavior and staged changes.
 2. Commit the approved batch and use `npm run publish:dev -- --publish`; never push main.
 3. Open/update a pull request targeting main and request `rockybottom128` review. Do not merge or enable auto-merge as a contributor.
 4. Wait for both the feature commit's required production-Worker preview check and the shared dev deployment check. Dev may have a snapshot SHA distinct from the feature SHA; confirm its source tree and live `/version.json`. Retrieve the immutable PR preview from its Cloudflare comment/build details. Return the actual PR and shared-dev links.

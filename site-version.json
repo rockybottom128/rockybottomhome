@@ -3,12 +3,12 @@
   "version": "0.4.1.1",
   "stage": "prelaunch",
   "base": {
-    "commit": "aed7e53cf5bea370c7574fbdbc7fbda47b2e1c1c",
-    "version": "0.4.1.0",
+    "commit": "ae0e09fb0e7a4a819d406eaf2cd4d044d0138668",
+    "version": "0.4.1.1",
     "stage": "prelaunch"
   },
   "change": {
-    "level": "minor",
-    "reason": "Refresh area destination photos and credits, add Blue Ridge Parkway guide, and update park descriptions"
+    "level": "none",
+    "reason": "Document existing Linux App contributor setup and align unverified Windows guidance with current publishing workflow"
   }
 }
