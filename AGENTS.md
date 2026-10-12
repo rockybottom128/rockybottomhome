@@ -6,7 +6,7 @@
 - This is an existing Astro 7 website on Cloudflare Workers Builds, not Cloudflare Pages or a Sites-managed project. Preserve its architecture, dependency lockfile, and deployment configuration.
 - Production: https://rockybottomhome.com and https://rockybottomhome.accts-e61.workers.dev. Both are production destinations.
 - Read `docs/environment-runbook.md` before infrastructure, database, authentication deployment, or recovery work. It distinguishes verified remote settings from source configuration and records open recovery gaps. Keep its verification date/evidence current when authorized infrastructure changes occur.
-- The owner is GitHub account `rockybottom128`. Contributors use their own authorized GitHub account, never the owner's credentials.
+- The owner is GitHub account `rockybottom128`. Scott and Karen's everyday Linux accounts on the MacBook Air are contributors using separate repository-scoped GitHub Apps. Other machines may use individual accounts with ordinary write access. Never substitute owner credentials. See `docs/linux-development-access.md` for this PC's setup.
 
 ## Local editing is the default
 - Inspect repository status, current branch, origin, and applicable instructions at the start of work. Preserve unrelated/uncommitted work.
@@ -20,7 +20,7 @@
 ## Development publication and production boundary
 - For contributor sessions, “push”, “publish”, or “deploy” refers to publishing the approved batch to a DEVELOPMENT PREVIEW and opening/updating a pull request, not production. If ambiguous, state this interpretation before acting.
 - Use the shared-dev publishing command below for an authorized batch. Open/update a PR from its feature branch to `main` unless the user will create the PR elsewhere. Never merge as a contributor. Request review from `rockybottom128`.
-- NEVER push directly to `main`, force-push, merge to `main`, enable auto-merge, bypass branch protections, change production routes/DNS/domains, or run a production deploy as part of Karen's contributor workflow. Production promotion is a separate owner-controlled task after review of the exact batch.
+- NEVER push directly to `main`, force-push, merge to `main`, enable auto-merge, bypass branch protections, change production routes/DNS/domains, or run a production deploy from either Scott's or Karen's contributor session. Production promotion is a separate owner-controlled task after review of the exact batch.
 - `npm run deploy` and `wrangler deploy` target production with this repository's current configuration. Do not run them. A different Git branch does NOT make a direct Wrangler deploy safe. Do not use `wrangler versions deploy` either.
 - Contributors need no Cloudflare API token or local `wrangler login`: Cloudflare Workers Builds authenticates its own builds from GitHub.
 - Expected Cloudflare configuration: Worker `rockybottomhome`; production branch `main`; build command `npm run build`; non-production branch builds enabled; non-production deploy command `npx wrangler versions upload`; Preview URLs enabled. The bare `rockybottomhome.accts-e61.workers.dev` URL is production, not dev.
@@ -33,7 +33,7 @@
 ## Repository onboarding
 - These instructions and `.github/CODEOWNERS` travel with the repository. Contributors should clone or pull current `main`; no manual AGENTS.md installation or setup-branch cleanup is needed.
 - Start contributor changes on a fresh task branch, not the historical `codex/dev-preview-setup` branch.
-- See `docs/windows-setup.md` for Windows installation and authentication and `docs/family-workflow.md` for review and publishing.
+- See `docs/linux-development-access.md` for the existing two-account Linux setup and `docs/family-workflow.md` for current publishing. `docs/windows-setup.md` is an unverified starting guide for a future Windows installation.
 - GitHub protections, not this file alone, enforce access. Do not change repository rules, collaborator roles, or credentials to bypass them.
 
 ## Validation
@@ -65,7 +65,8 @@
 - `astro.config.mjs`, `wrangler.json`, `package.json`: build/deployment configuration; not routine content-edit targets.
 
 ## Credentials and permissions
-- Karen signs into GitHub herself in her browser through `gh auth login`; never request passwords/tokens in chat or save them in source, AGENTS.md, shell history, or logs.
+- On this PC, preserve each Linux user's existing App helper, private profile and repository-local credential configuration. Use `gh auth status` and `rockybottom-auth verify`; installation tokens do not support a human `gh api user` identity check. Do not run `gh auth login` or `gh auth setup-git` to replace this setup. Personal-account browser login applies only to separately configured machines. Never request or expose tokens/private keys in chat, source or logs.
+- The helper automatically renews temporary tokens and needs access to its private lock/cache outside the checkout. Diagnose sandbox write restrictions before treating a generic credential error as a broken installation. Assess Karen in her own signed-in session; never copy Scott's authentication to her. App CLI operations that assume a human viewer may require the REST equivalent.
 - Git commit author name/email is configured separately from authentication. Ask Karen for her desired name and verified GitHub email (or GitHub-provided noreply address); use repository-local settings.
-- Stored gh authentication belongs to the Windows user environment, not one chat or one app. Do not claim it is Codex-exclusive. Existing terminal credentials can be used only within the user's authorized task.
+- Stored authentication belongs to the operating-system user environment, not one chat or one app. Do not claim it is Codex-exclusive. Existing terminal credentials can be used only within the user's authorized task.
 - Use normal project-scoped sandbox permissions; request narrow approval for necessary network/install/Git operations. Do not disable security protections or request unrestricted access just for this website.
