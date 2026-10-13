@@ -3,8 +3,8 @@
   "version": "0.4.2.0",
   "stage": "prelaunch",
   "base": {
-    "commit": "7f1609d0c23b1f0c0a3abef0252538aca56b4371",
-    "version": "0.4.1.1",
+    "commit": "ac3977d8949ede5bc7bd2cd5c00fc8f64925dccf",
+    "version": "0.4.1.2",
     "stage": "prelaunch"
   },
   "change": {
