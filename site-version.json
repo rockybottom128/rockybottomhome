@@ -1,14 +1,14 @@
 {
   "schema": 1,
-  "version": "0.4.2.0",
+  "version": "0.4.3.0",
   "stage": "prelaunch",
   "base": {
-    "commit": "ac3977d8949ede5bc7bd2cd5c00fc8f64925dccf",
-    "version": "0.4.1.2",
+    "commit": "dae48e99afd0ab3a6eba5aa0dd05744fd09cab1c",
+    "version": "0.4.2.0",
     "stage": "prelaunch"
   },
   "change": {
     "level": "update",
-    "reason": "Align Vite versions to restore Cloudflare local development preview"
+    "reason": "Widen full home detail value columns and update cottage wording and confirmed property details, highlighting its thoughtful, functional layout"
   }
 }
