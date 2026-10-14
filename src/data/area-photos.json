@@ -92,5 +92,72 @@
     "note": "Photographer’s watermark retained.",
     "originalUrl": "https://www.daveallenphotography.com/",
     "fit": "contain"
+  },
+  "highlands": {
+    "url": "/area/highlands.jpg",
+    "source": "https://www.highlandschamber.org/things-to-do/shopping/main-street/",
+    "author": "Highlands Chamber of Commerce / Visit Highlands, NC",
+    "license": null,
+    "licenseUrl": null,
+    "alt": "Shops and tree-lined Main Street in downtown Highlands, North Carolina",
+    "note": "Resized; cropped in layout.",
+    "originalUrl": "https://assets.simpleviewinc.com/simpleview/image/upload/v1/clients/highlandsnc-redesign/Downtown_224fcd02-dc0d-414f-bc30-214678e23700.jpg",
+    "rightsStatus": "Source credited; public-use permission has not been verified."
+  },
+  "cashiers": {
+    "url": "/area/cashiers.jpg",
+    "source": "https://whitesidebrewing.com/events",
+    "author": "SB Photographs, via Whiteside Brewing Company",
+    "license": null,
+    "licenseUrl": null,
+    "alt": "Whiteside Brewing Company in Cashiers with outdoor picnic tables and orange umbrellas",
+    "note": "Resized; cropped in layout.",
+    "originalUrl": "https://d1w7312wesee68.cloudfront.net/G0WTi5-Qn-7r7m0vUq_zVXvBHXxT7w9vD1KojrDR6xw/ext%3Awebp/quality%3A85/plain/s3%3A//toast-sites-resources-prod/restaurantImages/3c56df2d-abad-4c78-a299-d33bbc313c6e/NorthCarolinaMountainRehearsalDinnerBySBPhotographs1068_websize1.jpeg",
+    "rightsStatus": "Source credited; public-use permission has not been verified."
+  },
+  "saluda": {
+    "url": "/area/saluda.jpg",
+    "source": "https://thegorgezipline.com/photos-videos/#pg1-15",
+    "author": "The Gorge Zipline",
+    "license": null,
+    "licenseUrl": null,
+    "alt": "Guest ziplining above a forested mountain gorge in Saluda, North Carolina",
+    "note": "Resized; cropped in layout.",
+    "originalUrl": "https://thegorgezipline.com/wp-content/uploads/2023/01/Gorge-Zip-Woman-2.png",
+    "rightsStatus": "Source credited; public-use permission has not been verified."
+  },
+  "fly-fishing": {
+    "url": "/area/fly-fishing.jpg",
+    "source": "https://www.flyfishingtrail.com/photo-and-video",
+    "author": "WNC Fly Fishing Trail / Jackson County Chamber of Commerce",
+    "license": null,
+    "licenseUrl": null,
+    "alt": "Rainbow trout held over a landing net in the WNC Fly Fishing Trail photo gallery",
+    "note": "Resized; cropped in layout.",
+    "originalUrl": "https://static.wixstatic.com/media/398ec6_4d32ee99d689407f9bd8d7a029325914~mv2_d_2048_1536_s_2.jpg",
+    "rightsStatus": "Source credited; public-use permission has not been verified.",
+    "locationNote": "Published in the regional trail gallery; the exact river is not identified by the source."
+  },
+  "wineries": {
+    "url": "/area/wineries.jpg",
+    "source": "https://eaglemountainwinery.com/",
+    "author": "Eagle Mountain Winery",
+    "license": null,
+    "licenseUrl": null,
+    "alt": "Sampling wine from barrels in a winery cellar",
+    "note": "Resized; cropped in layout.",
+    "originalUrl": "https://eaglemountainwinery.com/wp-content/uploads/2018/07/wine-testing-1024x681.jpg",
+    "rightsStatus": "Source credited; public-use permission has not been verified."
+  },
+  "breweries": {
+    "url": "/area/breweries.jpg",
+    "source": "https://sierranevada.com/visit/mills-river/taproom",
+    "author": "Sierra Nevada Brewing Co.",
+    "license": null,
+    "licenseUrl": null,
+    "alt": "Outdoor tables, umbrellas, and string lights at Sierra Nevada’s Mills River amphitheater",
+    "note": "Resized; cropped in layout.",
+    "originalUrl": "https://webadmin.sierranevada.com/wp-content/uploads/2022/12/Amphitheater-Evening-View-1-BANNER-768x513-1.jpeg?w=3840",
+    "rightsStatus": "Source credited; public-use permission has not been verified."
   }
 }

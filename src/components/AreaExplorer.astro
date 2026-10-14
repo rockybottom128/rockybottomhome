@@ -1,9 +1,10 @@
 ---
 import { places } from '../data/area';
 import photos from '../data/area-photos.json';
+const groups = [...new Set(places.map(place => place.group))];
 ---
 <details class="area-explorer">
-  <summary><span><span class="eyebrow">BEYOND ROCKY BOTTOM</span><span class="area-summary-title">Explore the area</span><span class="area-summary-description">Mountain towns, parks, rivers & lake days</span></span><span class="area-expand" aria-hidden="true">+</span></summary>
+  <summary><span><span class="eyebrow">BEYOND ROCKY BOTTOM</span><span class="area-summary-title">Explore the area</span><span class="area-summary-description">Mountain towns, outdoor adventures, breweries & wineries</span></span><span class="area-expand" aria-hidden="true">+</span></summary>
   <div class="area-content" role="region" aria-label="Area attractions" aria-roledescription="carousel" tabindex="0">
     <div class="area-slides">
       {places.map((place, index) => {
@@ -14,7 +15,16 @@ import photos from '../data/area-photos.json';
         </article>;
       })}
     </div>
-    <div class="thumbnail-navigation area-thumbnail-navigation"><button class="thumbnail-arrow" data-area-step="-1" aria-label="Previous attraction">‹</button><div class="thumbnail-strip area-thumbnails" aria-label="Choose an attraction">{places.map((place, index) => { const photo = photos[place.id as keyof typeof photos]; return <button class:list={["area-thumbnail", { "area-group-start": index === 0 || places[index - 1].group !== place.group }]} aria-label={`Show ${place.name}`} aria-current={index === 0 ? 'true' : 'false'} data-area-index={index}><span class="area-group-label" aria-hidden="true">{index === 0 || places[index - 1].group !== place.group ? place.group : "\u00a0"}</span><span class="thumbnail-crop"><img src={photo.url} alt="" loading="lazy" width="180" height="110" /></span><span class="area-thumbnail-label">{place.name}</span></button>; })}</div><button class="thumbnail-arrow" data-area-step="1" aria-label="Next attraction">›</button></div>
+    <nav class="area-destinations" aria-label="Choose an attraction">
+      {groups.map((group, groupIndex) => <section class="area-destination-group" aria-labelledby={`area-group-${groupIndex}`}>
+        <h4 id={`area-group-${groupIndex}`}>{group}</h4>
+        <div class="area-thumbnail-grid">{places.map((place, index) => {
+          if (place.group !== group) return null;
+          const photo = photos[place.id as keyof typeof photos];
+          return <button class="area-thumbnail" aria-label={`Show ${place.name}`} aria-current={index === 0 ? 'true' : 'false'} data-area-index={index}><span class="thumbnail-crop"><img src={photo.url} alt="" loading="lazy" width="180" height="110" /></span><span class="area-thumbnail-label">{place.name}</span></button>;
+        })}</div>
+      </section>)}
+    </nav>
     <p class="area-status" aria-live="polite" aria-atomic="true">1 of {places.length} · {places[0].name}</p>
     <p class="area-visit-note">Swipe a photo or choose a destination below it. Follow the visitor links for current access, hours, and conditions.</p>
   </div>
@@ -32,12 +42,14 @@ import photos from '../data/area-photos.json';
     slides.forEach((slide, i) => { slide.hidden = i !== current; });
     thumbs.forEach((thumb, i) => thumb.setAttribute('aria-current', String(i === current)));
     root.querySelector('.area-status')!.textContent = `${current + 1} of ${slides.length} · ${thumbs[current].querySelector('.area-thumbnail-label')!.textContent!.trim()}`;
-    const strip = thumbs[current].parentElement!;
-    strip.scrollTo({ left: thumbs[current].offsetLeft - (strip.clientWidth - thumbs[current].clientWidth) / 2, behavior: 'auto' });
     if (focusedArrow) slides[current].querySelector<HTMLButtonElement>(`[data-area-step="${focusedArrow}"]`)?.focus({ preventScroll: true });
   }
   root.querySelectorAll<HTMLButtonElement>('[data-area-step]').forEach(button => button.addEventListener('click', () => select(current + Number(button.dataset.areaStep))));
-  thumbs.forEach((button, i) => button.addEventListener('click', () => select(i)));
+  thumbs.forEach((button, i) => button.addEventListener('click', () => {
+    select(i);
+    // Lower rows can be well below the featured photo, especially on phones.
+    slides[current].scrollIntoView({ block: 'start', behavior: 'instant' });
+  }));
   region.addEventListener('keydown', event => {
     if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
     event.preventDefault();

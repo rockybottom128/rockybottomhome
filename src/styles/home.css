@@ -28,3 +28,13 @@ html{scroll-padding-top:calc(var(--site-top-height, 150px) + 12px)}
   .site-top .brand small{font-size:8px}
   .site-top .button-small{max-width:150px;gap:8px;line-height:1.3}
 }
+
+/* Grouped destination rows keep every attraction discoverable without sideways scrolling. */
+.area-destinations{display:grid;gap:24px;margin-top:24px;padding:0;border:0;justify-content:normal}
+.area-destination-group{min-width:0}
+.area-destination-group h4{font-size:14px;line-height:1.4;color:var(--forest);margin:0 0 10px}
+.area-thumbnail-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;align-items:start}
+.area-thumbnail-grid .area-thumbnail{width:100%;min-width:0;margin:0;align-self:stretch}
+.area-thumbnail-grid .thumbnail-crop{display:block;height:auto;aspect-ratio:3/2;overflow:hidden}
+.area-thumbnail:focus-visible{outline:3px solid #607d32;outline-offset:3px}
+@media(max-width:680px){.area-thumbnail-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.area-destinations{gap:22px}.area-thumbnail-label{font-size:13px}}
