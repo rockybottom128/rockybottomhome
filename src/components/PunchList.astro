@@ -1,0 +1,26 @@
+<section class="card punch-list" id="punch-list" aria-labelledby="punch-title">
+ <div class="punch-heading"><div><p class="eyebrow">SHARED OWNER TO-DO LIST</p><h2 id="punch-title">Punch list</h2></div><button type="button" class="text-button" id="punch-refresh">Refresh list</button></div>
+ <p>Any owner can add, edit, complete, or reopen an item.</p>
+ <form id="punch-create" class="punch-create"><div><label for="punch-label">New item</label><input id="punch-label" name="label" maxlength="120" required placeholder="What needs to be done?" /></div><button class="button" type="submit">Add item</button></form>
+ <div class="punch-toolbar"><div class="punch-completed-control"><button id="punch-completed-toggle" class="setting-toggle" type="button" role="switch" aria-checked="false" aria-labelledby="punch-completed-label"></button><span id="punch-completed-label">Include completed items</span></div><span class="hint">Click a heading to sort.</span></div>
+ <p id="punch-result" role="status" aria-live="polite">Loading punch list…</p>
+ <div class="punch-table-wrap" role="region" aria-label="Punch list items" tabindex="0"><table class="punch-table"><caption class="punch-sr-only">Shared punch list. Sort using the column headings.</caption><colgroup><col class="punch-status-column" /><col /><col class="punch-date-column" /><col class="punch-date-column" /></colgroup><thead><tr>
+ <th scope="col" aria-sort="none"><button type="button" data-punch-sort="status">Status <span aria-hidden="true">↕</span></button></th>
+ <th scope="col" aria-sort="none"><button type="button" data-punch-sort="name">Item name <span aria-hidden="true">↕</span></button></th>
+ <th scope="col" aria-sort="descending"><button type="button" data-punch-sort="created">Created <span aria-hidden="true">↓</span></button></th>
+ <th scope="col" aria-sort="none"><button type="button" data-punch-sort="completed">Completed <span aria-hidden="true">↕</span></button></th>
+ </tr></thead><tbody id="punch-items"></tbody></table></div>
+ <div class="punch-footer"><p id="punch-count" class="hint"></p><div id="punch-pages" hidden><button id="punch-prev" type="button" class="text-button" disabled>Previous</button><button id="punch-next" type="button" class="text-button" disabled>Next</button></div></div>
+</section>
+<script>import '../scripts/punch-list';</script>
+<style is:global>
+ .punch-list{margin-block:1.5rem;scroll-margin-top:calc(var(--dashboard-top-height,100px) + 20px)}
+ .punch-heading,.punch-toolbar,.punch-completed-control,.punch-footer{display:flex;align-items:center;gap:1rem;flex-wrap:wrap}.punch-heading,.punch-toolbar,.punch-footer{justify-content:space-between}.punch-heading h2{margin:0}
+ .punch-create{display:flex;align-items:end;gap:.75rem;margin:1.25rem 0}.punch-create>div{flex:1;min-width:0}.punch-create input{margin-bottom:0;width:100%;box-sizing:border-box}.punch-create button{flex-shrink:0}
+ .punch-table-wrap{overflow-x:auto;border:1px solid #d8dfd7;border-radius:10px}.punch-table{width:100%;min-width:650px;table-layout:fixed;border-collapse:collapse;text-align:left;font-size:.93rem}.punch-table th,.punch-table td{padding:.8rem;border-bottom:1px solid #d8dfd7;vertical-align:top}.punch-table tr:last-child td{border-bottom:0}.punch-table th{background:#f3f6f0}.punch-table th button{background:transparent;border:0;color:inherit;font:inherit;font-weight:700;cursor:pointer;padding:.25rem 0;white-space:nowrap}.punch-status-column{width:44px}.punch-date-column{width:24%}.punch-table tr.completed{background:#f8f9f5}
+ .punch-name-wrap,.punch-inline-edit{display:flex;align-items:center;gap:.2rem}.punch-name-wrap>span{flex:1;overflow-wrap:anywhere;min-width:100px}.punch-inline-edit{margin:0!important}.punch-inline-edit input{margin:0;width:100%;min-width:110px;box-sizing:border-box}.punch-icon{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;padding:0;box-sizing:border-box;border:1px solid #ccd5ca;background:transparent;color:#285342;border-radius:6px;font-size:1.15rem;cursor:pointer;flex-shrink:0}.punch-icon:focus-visible,.punch-table th button:focus-visible{outline:2px solid #285342;outline-offset:3px}
+ .punch-status{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;box-sizing:border-box;white-space:nowrap;background:transparent;border:1px solid #ccd5ca;border-radius:6px;padding:0;color:#285342;font:inherit;cursor:pointer}.punch-date{min-width:130px}.punch-date small{display:block;color:#58655d;overflow-wrap:anywhere;margin-top:.25rem}.punch-sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+ @media(max-width:600px){.punch-create{align-items:stretch;flex-direction:column}.punch-table th,.punch-table td{padding:.6rem}.punch-table{min-width:650px}.punch-toolbar{gap:.5rem}}
+ .punch-table th:first-child,.punch-table td:first-child{white-space:nowrap;padding-inline:4px}.punch-table th:nth-child(2),.punch-table td:nth-child(2){padding-inline:4px}.punch-table th:first-child button{font-size:12px;letter-spacing:0;white-space:normal}.punch-table th:first-child button span{display:block}
+ .punch-status.is-open{color:#21833b}.punch-status.is-completed{color:#c62828}
+</style>

@@ -1,14 +1,14 @@
 {
   "schema": 1,
-  "version": "0.4.3.0",
+  "version": "0.5.0.0",
   "stage": "prelaunch",
   "base": {
-    "commit": "dae48e99afd0ab3a6eba5aa0dd05744fd09cab1c",
-    "version": "0.4.2.0",
+    "commit": "fc784025f46c0571e19333cd67f8807ec374656c",
+    "version": "0.4.3.0",
     "stage": "prelaunch"
   },
   "change": {
-    "level": "update",
-    "reason": "Widen full home detail value columns and update cottage wording and confirmed property details, highlighting its thoughtful, functional layout"
+    "level": "feature",
+    "reason": "Add a simple shared owner punch list with inline editing, sortable columns and optional completed items"
   }
 }
