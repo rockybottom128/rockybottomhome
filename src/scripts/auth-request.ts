@@ -1,7 +1,7 @@
 export async function post(path:string,data:Record<string,unknown>) {
  const response=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data),credentials:'same-origin'});
- const result=await response.json() as {error?:string|{message?:string};message?:string};
- if(!response.ok)throw new Error((typeof result.error==='string'?result.error:result.error?.message)||result.message||'Unable to complete this request.');
+ const result=await response.json() as {error?:string|{message?:string};message?:string;code?:string};
+ if(!response.ok)throw Object.assign(new Error((typeof result.error==='string'?result.error:result.error?.message)||result.message||'Unable to complete this request.'),{code:result.code});
  return result;
 }
 export function field(id:string):HTMLInputElement {return document.getElementById(id) as HTMLInputElement;}

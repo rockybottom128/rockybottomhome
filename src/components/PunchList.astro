@@ -1,7 +1,15 @@
+---
+interface Props { owners: {id:string;email_normalized:string;status:string}[] }
+const {owners}=Astro.props;
+---
 <section class="card punch-list" id="punch-list" aria-labelledby="punch-title">
- <div class="punch-heading"><div><p class="eyebrow">SHARED OWNER TO-DO LIST</p><h2 id="punch-title">Punch list</h2></div><button type="button" class="text-button" id="punch-refresh">Refresh list</button></div>
- <p>Any owner can add, edit, complete, or reopen an item.</p>
- <form id="punch-create" class="punch-create"><div><label for="punch-label">New item</label><input id="punch-label" name="label" maxlength="120" required placeholder="What needs to be done?" /></div><button class="button" type="submit">Add item</button></form>
+ <div class="punch-heading"><h2 id="punch-title">Punch list</h2><div class="punch-visibility"><button type="button" id="punch-visibility-toggle" class="setting-toggle" role="switch" aria-label="Punch list visibility" aria-checked="false" aria-expanded="false" aria-controls="punch-content"></button><span id="punch-visibility-label">Show punch list</span></div></div>
+ <div id="punch-content" hidden>
+ <div class="punch-heading"><div><p class="eyebrow">SHARED OWNER TO-DO LIST</p></div><button type="button" class="text-button" id="punch-refresh">Refresh list</button></div>
+ <p>Any owner can add, edit, complete, or reopen an item.</p><p id="punch-setup" class="punch-feedback" role="status" hidden></p><noscript><p>Enable JavaScript to open and manage the punch list.</p></noscript>
+ <label class="bulk-mode"><input type="checkbox" id="punch-bulk" /> Add multiple items</label>
+ <form id="punch-create" class="punch-create"><div><label for="punch-label">New item</label><input id="punch-label" name="label" maxlength="120" required placeholder="What needs to be done?" /><textarea id="punch-labels" rows="6" maxlength="20000" hidden disabled placeholder="One item per line (up to 100)" aria-label="New items, one per line"></textarea></div><button class="button" type="submit" id="punch-add">Add item</button></form><p id="punch-create-result" class="punch-feedback" role="alert" tabindex="-1"></p><p id="punch-bulk-hint" class="hint" hidden>One item per line, up to 100. Blank lines are ignored. Duplicate names are checked within these lines and against open and completed items.</p>
+ <label id="punch-duplicate-choice" hidden><input type="checkbox" id="punch-allow-duplicates" /> Add all lines, including duplicate names, intentionally</label>
  <div class="punch-toolbar"><div class="punch-completed-control"><button id="punch-completed-toggle" class="setting-toggle" type="button" role="switch" aria-checked="false" aria-labelledby="punch-completed-label"></button><span id="punch-completed-label">Include completed items</span></div><span class="hint">Click a heading to sort.</span></div>
  <p id="punch-result" role="status" aria-live="polite">Loading punch list…</p>
  <div class="punch-table-wrap" role="region" aria-label="Punch list items" tabindex="0"><table class="punch-table"><caption class="punch-sr-only">Shared punch list. Sort using the column headings.</caption><colgroup><col class="punch-status-column" /><col /><col class="punch-date-column" /><col class="punch-date-column" /></colgroup><thead><tr>
@@ -11,9 +19,18 @@
  <th scope="col" aria-sort="none"><button type="button" data-punch-sort="completed">Completed <span aria-hidden="true">↕</span></button></th>
  </tr></thead><tbody id="punch-items"></tbody></table></div>
  <div class="punch-footer"><p id="punch-count" class="hint"></p><div id="punch-pages" hidden><button id="punch-prev" type="button" class="text-button" disabled>Previous</button><button id="punch-next" type="button" class="text-button" disabled>Next</button></div></div>
-</section>
+<button type="button" class="button secondary" id="punch-email">Email punch list</button>
+ <dialog id="punch-report-dialog" aria-labelledby="punch-report-title"><h2 id="punch-report-title">Email punch list</h2><p>All matching items, in your selected order, across every page. Up to 10 recipients. Each recipient is processed separately. Preview first, then review and use the action below; preparing a preview sends nothing.</p>
+ <p id="report-mail-mode" class="punch-feedback" role="status">Checking delivery mode…</p><form id="punch-report-form"><fieldset><legend>Listed owners (active or invited)</legend>{owners.map(o=><label class="report-owner"><input type="checkbox" name="report-owner" value={o.id} /> {o.email_normalized} · {o.status}</label>)}</fieldset>
+ <label for="report-custom">Custom recipients (separate with commas or new lines)</label><textarea id="report-custom" rows="3" maxlength="2600"></textarea><p class="hint">Listed owners receive owner email attribution. Custom recipients do not. If an address is entered both ways, attribution is omitted. This does not invite anyone or change visitor email rules.</p>
+ <p id="report-setup" class="punch-feedback" role="status" hidden></p><button type="submit" class="button" id="report-prepare">Preview report</button></form>
+ <div id="report-review" hidden><p id="report-recipients"></p><pre id="report-preview"></pre><p class="hint">This preview omits owner emails. Listed-owner copies include attribution as described above. The snapshot stays fixed even if the list changes.</p><button type="button" class="button" id="report-send">Send report</button><button type="button" class="text-button" id="report-new">Prepare another report</button></div>
+ <p id="report-result" class="punch-feedback" role="alert" tabindex="-1"></p><button type="button" class="text-button" id="report-close">Close</button></dialog>
+</div></section>
 <script>import '../scripts/punch-list';</script>
 <style is:global>
+ .punch-feedback:empty{display:none}.punch-feedback{padding:.8rem;background:#fff1dc;border-left:4px solid #94651c;overflow-wrap:anywhere}.punch-visibility{display:flex;align-items:center;gap:.7rem}.punch-visibility .setting-toggle:focus-visible{outline:3px solid #285342;outline-offset:4px}#punch-content[hidden]{display:none}
+ .bulk-mode input,.report-owner input,#punch-duplicate-choice input{width:auto;margin-right:.5rem}.report-owner{display:block}.punch-create textarea{width:100%;box-sizing:border-box}#punch-report-dialog{max-width:650px;width:calc(100% - 3rem);max-height:85vh;overflow:auto;border:1px solid #ccd5ca;border-radius:12px;padding:1.2rem}#punch-report-dialog::backdrop{background:#0008}#report-preview{white-space:pre-wrap;overflow-wrap:anywhere;font-size:.85rem}#punch-report-dialog textarea{width:100%;box-sizing:border-box}
  .punch-list{margin-block:1.5rem;scroll-margin-top:calc(var(--dashboard-top-height,100px) + 20px)}
  .punch-heading,.punch-toolbar,.punch-completed-control,.punch-footer{display:flex;align-items:center;gap:1rem;flex-wrap:wrap}.punch-heading,.punch-toolbar,.punch-footer{justify-content:space-between}.punch-heading h2{margin:0}
  .punch-create{display:flex;align-items:end;gap:.75rem;margin:1.25rem 0}.punch-create>div{flex:1;min-width:0}.punch-create input{margin-bottom:0;width:100%;box-sizing:border-box}.punch-create button{flex-shrink:0}

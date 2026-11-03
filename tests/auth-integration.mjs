@@ -44,11 +44,23 @@ try {
  assert.equal(denied.status,400,'Public callers cannot bypass visitor restrictions by requesting owner mail');
  assert.equal(db.prepare("SELECT COUNT(*) AS n FROM visitors WHERE email_normalized='blocked@notallowed.test'").get().n,0,'Rejected recipient must not create a visitor record');
  assert.match(ownerCookie,/rb-owner/);assert.ok(login.headers.getSetCookie().some(c=>/httponly/i.test(c)));
- const dashboard=await fetch(base+'/owner/dashboard',{headers:{cookie:ownerCookie}});assert.equal(dashboard.status,200);const html=await dashboard.text();assert.match(html,/PRIVATE OWNER DASHBOARD/);assert.match(html,/INTERACTIVE WORKFLOW PREVIEW/);assert.match(html,/id="selected-showings"/);assert.match(html,/id="shared-activity"/);assert.doesNotMatch(html,/id="booking-list"/);assert.doesNotMatch(html,/id="activity-log"/);assert.doesNotMatch(html,/id="add-owner"/);assert.equal(dashboard.headers.get('cache-control'),'no-store');
- assert.ok(html.indexOf('id="shared-availability"')<html.indexOf('id="workflow-heading"'));
- assert.ok(html.indexOf('id="shared-activity"')<html.indexOf('id="workflow-heading"'));
+ const dashboard=await fetch(base+'/owner/dashboard',{headers:{cookie:ownerCookie}});assert.equal(dashboard.status,200);const html=await dashboard.text();assert.match(html,/PRIVATE OWNER DASHBOARD/);assert.doesNotMatch(html,/INTERACTIVE WORKFLOW PREVIEW/);assert.match(html,/id="dashboard-menu"/);assert.match(html,/id="punch-visibility-toggle"/);assert.match(html,/id="punch-content" hidden/);assert.match(html,/id="selected-showings"/);assert.match(html,/id="shared-activity"/);assert.doesNotMatch(html,/id="booking-list"/);assert.doesNotMatch(html,/id="activity-log"/);assert.doesNotMatch(html,/id="add-owner"/);assert.equal(dashboard.headers.get('cache-control'),'no-store');
+ assert.ok(html.indexOf('id="shared-availability"')<html.indexOf('id="email-heading"'));
+ assert.ok(html.indexOf('id="website-stats"')<html.indexOf('id="shared-activity"'));
  assert.match(html,/Owner password set or reset/);
  assert.doesNotMatch(html,/Calendar controls still use fictional browser data/);
+ // Report APIs: active-owner gate, CSRF, all-page snapshot and local fake delivery.
+ assert.equal((await post('/api/owner/punch-reports',{action:'prepare'})).status,401);
+ const bulkId=crypto.randomUUID();
+ assert.equal((await post('/api/owner/punch-list',{action:'bulk-create',id:bulkId,labels:Array.from({length:55},(_,i)=>'Fixture task '+i).join('\n')},ownerCookie)).status,200);
+ const reportInput={action:'prepare',id:crypto.randomUUID(),owners:[],custom:'report-recipient@example.com',sort:'name',direction:'asc',includeCompleted:false,timeZone:'America/New_York'};
+ assert.equal((await post('/api/owner/punch-reports',reportInput,ownerCookie,'https://evil.example')).status,400);
+ const reportResponse=await post('/api/owner/punch-reports',reportInput,ownerCookie);assert.equal(reportResponse.status,200);const report=await reportResponse.json();assert.match(report.preview,/55 items/);
+ assert.equal(report.deliveryMode,'test');assert.equal((await post('/api/owner/punch-reports',{action:'send',id:report.id,deliveryMode:'resend'},ownerCookie)).status,409);
+ const sentReport=await post('/api/owner/punch-reports',{action:'send',id:report.id,deliveryMode:'test'},ownerCookie);assert.equal(sentReport.status,200);const deliveryResult=await sentReport.json();assert.equal(deliveryResult.recipients[0].status,'sent');assert.equal(deliveryResult.recipients[0].localTest,1);
+ assert.equal(db.prepare("SELECT count(*) n FROM local_test_mail WHERE recipient='report-recipient@example.com'").get().n,1);
+ await post('/api/owner/punch-reports',{action:'send',id:report.id,deliveryMode:'test'},ownerCookie);
+ assert.equal(db.prepare("SELECT count(*) n FROM local_test_mail WHERE recipient='report-recipient@example.com'").get().n,1);
  const owner=db.prepare("SELECT id FROM owner_accounts WHERE email_normalized='owner@example.com'").get();
  assert.equal((await post('/api/owner/remove',{id:owner.id},ownerCookie)).status,400,'Last active owner protected');
  assert.equal((await fetch(base+'/owner/dashboard',{headers:{cookie:ownerCookie},redirect:'manual'})).status,200);
@@ -190,7 +202,7 @@ try {
  const started=await post('/api/visitor/messages',conversationInput,visitorCookie);assert.equal(started.status,200);const thread=await started.json();
  assert.equal((await (await post('/api/visitor/messages',conversationInput,visitorCookie)).json()).id,thread.id);
  const inbox=await (await fetch(base+'/api/owner/messages',{headers:{cookie:ownerCookie}})).json();assert.equal(inbox.threads[0].status,'needs_owner');
- assert.match(await (await fetch(base+'/owner/dashboard/',{headers:{cookie:ownerCookie}})).text(),/data-message-count>1</);
+ assert.match(await (await fetch(base+'/owner/dashboard/',{headers:{cookie:ownerCookie}})).text(),/data-message-count[^>]*>1</);
  const answer={action:'reply',thread_id:thread.id,revision:1,body:'Yes, your agent is welcome.',request_key:crypto.randomUUID()};
  assert.equal((await post('/api/owner/messages',answer,secondCookie)).status,401);
  assert.equal((await post('/api/owner/messages',answer,ownerCookie)).status,200);
@@ -228,6 +240,14 @@ try {
  const expired=mail('visitor@example.com').match(/\d{8}/)[0];db.exec('UPDATE email_challenges SET expires_at=0');
  assert.equal((await post('/api/visitor/verify',{email:'visitor@example.com',code:expired})).status,400,'Expired challenge rejected');
  await post('/api/owner/visitor-demo',{enabled:false},ownerCookie);
+ // Only this disposable fixture: verify older schema produces actionable errors.
+ db.exec('DROP TABLE punch_report_deliveries; DROP TABLE punch_reports; DROP TABLE punch_batches;');
+ const oldSchema=await (await fetch(base+'/api/owner/punch-list',{headers:{cookie:ownerCookie}})).json();assert.equal(oldSchema.bulkAvailable,false);assert.equal(oldSchema.reportsAvailable,false);
+ for(const path of ['/api/owner/punch-list','/api/owner/punch-reports']){
+  const blocked=await post(path,{action:path.endsWith('punch-list')?'bulk-create':'prepare',id:crypto.randomUUID(),labels:'Not saved'},ownerCookie);
+  assert.equal(blocked.status,503);assert.match((await blocked.json()).error,/database update is approved and applied/);
+ }
+ const oldHistory=await fetch(base+'/api/owner/punch-reports',{headers:{cookie:ownerCookie}});assert.equal(oldHistory.status,503);assert.match((await oldHistory.json()).error,/database update/);
  await post('/api/owner-auth/sign-out',{},ownerCookie);
  assert.equal((await fetch(base+'/owner/dashboard',{headers:{cookie:ownerCookie},redirect:'manual'})).status,303);
  console.log('PASS: protected pages, owner password/reset/session, visitor OTP replay/concurrency/expiry/attempts, CSRF, ID reuse and last-owner protection. No real email sent.');

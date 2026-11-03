@@ -4,7 +4,7 @@ export {allowedVisitorEmail as visitorRecipientAllowed} from './visitor-allowlis
 import {allowedVisitorEmail as visitorRecipientAllowed} from './visitor-allowlist';
 /** Callers authorize recipients and build subjects; owner messages allow bounded text. Never log provider payloads or credentials. */
 export class MailDeliveryUncertain extends Error { readonly uncertain=true; }
-export async function sendMail(env: AppEnv, to: string, subject: string, text: string, purpose: 'visitor' | 'owner' = 'visitor', deliveryKey?:string): Promise<string> {
+export async function sendMail(env: AppEnv, to: string, subject: string, text: string, purpose: 'visitor' | 'owner' | 'report' = 'visitor', deliveryKey?:string, html?:string): Promise<string> {
   to=normalizeEmail(to);
   if (/[\r\n]/.test(subject)) throw new Error('Invalid email subject');
   if(purpose==='owner') {
@@ -12,6 +12,9 @@ export async function sendMail(env: AppEnv, to: string, subject: string, text: s
     // active or invited owner. The public visitor API cannot select this purpose.
     const owner=await env.DB.prepare("SELECT id FROM owner_accounts WHERE email_normalized=? AND status IN ('active','invited')").bind(to).first();
     if(!owner)throw new Error('Owner recipient is not authorized');
+  } else if(purpose==='report') {
+    const authorized=await env.DB.prepare(`SELECT d.id FROM punch_report_deliveries d JOIN punch_reports r ON r.id=d.report_id JOIN owner_accounts o ON o.id=r.actor_id WHERE d.id=? AND d.recipient=? AND d.status='sending' AND o.status='active'`).bind(deliveryKey??'',to).first();
+    if(!authorized)throw new Error('Report recipient is not authorized');
   } else if(!await visitorRecipientAllowed(env,to)) {
     throw new Error('This email is not enabled for visitor testing.');
   }
@@ -45,6 +48,7 @@ export async function sendMail(env: AppEnv, to: string, subject: string, text: s
         to: [to],
         subject,
         text,
+        ...(html ? {html} : {}),
       }),
     });
     providerStatus = sent.status;
