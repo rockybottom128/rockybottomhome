@@ -2,10 +2,21 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {fixture} from './helpers/d1.mjs';
 import {changePunchList,readPunchList} from '../src/server/punch-list.ts';
-import {prepareReport,deliverReport,reportHistory} from '../src/server/punch-reports.ts';
+import {prepareReport,deliverReport,reportHistory,reportBody} from '../src/server/punch-reports.ts';
 function setup(){const f=fixture();f.db.exec("INSERT INTO owner_accounts(id,email_normalized,status,created_at) VALUES ('a','a@example.com','active',1),('b','b@example.com','active',1),('i','invite@example.com','invited',1),('r','removed@example.com','removed',1)");return f;}
 const batch=labels=>({action:'bulk-create',id:crypto.randomUUID(),labels});
 const report=()=>({id:crypto.randomUUID(),owners:['i'],custom:'external@example.com',sort:'name',direction:'asc',includeCompleted:false,timeZone:'America/New_York'});
+test('legacy report labels cannot forge plain-text rows or columns and snapshots stay unchanged',()=>{
+ const label='Fix door\nOpen | FAKE ROW | now\t\u0007\u2028<img src=x>';
+ const snapshot={id:'legacy',actor_id:'a',created_at:1,options_json:JSON.stringify({includeCompleted:'false',sort:'name',direction:'asc',timeZone:'America/New_York'}),items_json:JSON.stringify([{label,created_at:1,completed_at:null,creator_email:'a|b@example.com',completed_email:null}])};
+ const original=structuredClone(snapshot),result=reportBody(snapshot,true);
+ const rows=result.text.split('\n\n')[1].split('\n');
+ assert.equal(rows.length,1);assert.equal(rows[0].split(' | ').length,4);
+ assert.match(rows[0],/Open ¦ FAKE ROW ¦ now/);
+ assert.doesNotMatch(rows[0],/[\u0000-\u001f\u007f-\u009f\u2028\u2029]/);
+ assert.ok(result.html.includes('&lt;img src=x&gt;'));assert.ok(!result.html.includes('<img'));
+ assert.deepEqual(snapshot,original);
+});
 test('bulk newline parsing, validation, atomic rollback and immutable retry',async()=>{const {db,env}=setup();try{
  const b={...batch(' A\r\n B\rC\n\nA '),allowDuplicates:true};await changePunchList(env,'a',b);await changePunchList(env,'a',b);assert.equal(db.prepare('SELECT count(*) n FROM punch_tasks').get().n,4);
  await assert.rejects(changePunchList(env,'a',{...b,labels:'Changed'}));

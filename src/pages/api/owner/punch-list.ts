@@ -3,7 +3,7 @@ import {runtime} from '../../../server/runtime';
 import {configured,body,json} from '../../../server/env';
 import {getOwner} from '../../../server/owner-auth';
 import {limit,RateLimitError} from '../../../server/rate-limit';
-import {readPunchList,changePunchList,PunchError,PunchDuplicateError} from '../../../server/punch-list';
+import {readPunchList,changePunchList,PunchError,PunchValidationError,PunchDuplicateError} from '../../../server/punch-list';
 import {punchCapabilities,requirePunchSetup,PunchSetupRequired,punchSetupMessage} from '../../../server/punch-schema';
 import {reportDeliveryMode} from '../../../server/punch-reports';
 export const prerender=false;
@@ -18,6 +18,7 @@ const route:APIRoute=async({request,url})=>{
   if(error instanceof PunchSetupRequired)return json({error:error.message,code:'PUNCH_SETUP_REQUIRED'},503);
   if(error instanceof RateLimitError)return json({error:'Too many changes. Please wait a minute.'},429);
   if(error instanceof PunchDuplicateError)return json({error:error.message,code:'PUNCH_DUPLICATES'},409);
+  if(error instanceof PunchValidationError)return json({error:error.message},400);
   if(error instanceof PunchError)return json({error:error.message},409);
   if(error instanceof SyntaxError||error instanceof Error&&/^(Invalid |Request too large)/.test(error.message))return json({error:'Invalid request.'},400);
   return json({error:'Unable to confirm the change. Refresh the list before retrying.'},503);

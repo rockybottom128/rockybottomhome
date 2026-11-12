@@ -1,15 +1,20 @@
 import type {AppEnv} from './env.ts';
 
 export class PunchError extends Error {}
+export class PunchValidationError extends PunchError {}
 export class PunchDuplicateError extends PunchError {}
+const nonPrintable=/[\u0000-\u001f\u007f-\u009f\u2028\u2029]/;
 export const normalizedPunchName=(value:string)=>value.normalize('NFKC').trim().replace(/\s+/g,' ').toLowerCase();
 function text(value:unknown,max:number):string {
- if(typeof value!=='string'||value.trim().length>max||!value.trim())throw new PunchError('Enter an item name between 1 and 120 characters.');
+ if(typeof value!=='string'||nonPrintable.test(value)||value.trim().length>max||!value.trim())throw new PunchValidationError('Enter an item name between 1 and 120 printable characters on one line.');
  return value.trim();
 }
-function id(value:unknown):string {return text(value,64);}
+function id(value:unknown):string {
+ if(typeof value!=='string'||nonPrintable.test(value)||!value.trim()||value.trim().length>64)throw new PunchValidationError('Invalid item or submission identifier.');
+ return value.trim();
+}
 function revision(value:unknown):number {
- if(!Number.isSafeInteger(value)||Number(value)<1)throw new PunchError('Refresh the list before changing this item.');
+ if(!Number.isSafeInteger(value)||Number(value)<1)throw new PunchValidationError('Invalid item revision. Refresh the list before changing this item.');
  return Number(value);
 }
 export async function active(env:AppEnv,owner:string){
@@ -23,23 +28,24 @@ export async function readPunchList(env:AppEnv,owner:string,params:URLSearchPara
  await active(env,owner);
  const columns:Record<string,string>={name:'p.label COLLATE NOCASE',status:'(p.completed_at IS NOT NULL)',created:'p.created_at',completed:'p.completed_at'};
  const sort=params.get('sort')||'created',direction=params.get('direction')||'desc';
- if(!Object.hasOwn(columns,sort)||!['asc','desc'].includes(direction))throw new PunchError('Invalid sort order.');
- const include=params.get('includeCompleted')||'false';if(!['true','false'].includes(include))throw new PunchError('Invalid completed-items option.');
- const offset=Number(params.get('offset')||0);if(!Number.isSafeInteger(offset)||offset<0||offset>1000000)throw new PunchError('Invalid page.');
+ if(!Object.hasOwn(columns,sort)||!['asc','desc'].includes(direction))throw new PunchValidationError('Invalid sort order.');
+ const include=params.get('includeCompleted')||'false';if(!['true','false'].includes(include))throw new PunchValidationError('Invalid completed-items option.');
+ const offset=Number(params.get('offset')||0);if(!Number.isSafeInteger(offset)||offset<0||offset>1000000)throw new PunchValidationError('Invalid page.');
  const items=await env.DB.prepare(`SELECT p.*,a.email_normalized creator_email,c.email_normalized completed_email
  FROM punch_tasks p JOIN owner_accounts a ON a.id=p.creator_id LEFT JOIN owner_accounts c ON c.id=p.completed_by
  ${include==='true'?'':'WHERE p.completed_at IS NULL'} ORDER BY ${columns[sort]} ${direction.toUpperCase()},p.id ASC LIMIT ? OFFSET ?`).bind(all?2001:51,all?0:offset).all();
- if(all&&items.results.length>2000)throw new PunchError('Report exceeds 2,000 items. No report was created.');
+ if(all&&items.results.length>2000)throw new PunchValidationError('Report exceeds 2,000 items. No report was created.');
  return {items:all?items.results:items.results.slice(0,50),hasMore:items.results.length>50,openCount:await openPunchCount(env)};
 }
 export async function changePunchList(env:AppEnv,owner:string,input:Record<string,unknown>){
  await active(env,owner);const action=input.action;const now=Date.now();let result;
  if(action==='bulk-create'){
   const batchId=id(input.id);
-  if(typeof input.labels!=='string')throw new PunchError('Enter one item per line.');
-  const labels=input.labels.split(/\r\n|\r|\n/).map((label,index)=>({label:label.trim(),line:index+1})).filter(x=>x.label);
-  if(!labels.length||labels.length>100)throw new PunchError('Enter between 1 and 100 nonblank lines.');
-  for(const row of labels)if(row.label.length>120||/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(row.label))throw new PunchError(`Line ${row.line}: use 1–120 printable characters.`);
+  if(typeof input.labels!=='string')throw new PunchValidationError('Enter one item per line.');
+  const lines=input.labels.split(/\r\n|\r|\n/).map((raw,index)=>({raw,label:raw.trim(),line:index+1}));
+  for(const row of lines)if(nonPrintable.test(row.raw)||row.label.length>120)throw new PunchValidationError(`Line ${row.line}: use 1–120 printable characters.`);
+  const labels=lines.filter(x=>x.label);
+  if(!labels.length||labels.length>100)throw new PunchValidationError('Enter between 1 and 100 nonblank lines.');
   const payload=JSON.stringify(labels.map(x=>x.label));
   const previous=await env.DB.prepare('SELECT actor_id,payload FROM punch_batches WHERE id=?').bind(batchId).first<{actor_id:string;payload:string}>();
   if(previous){if(previous.actor_id===owner&&previous.payload===payload)return {ok:true};throw new PunchError('This submission changed after saving. Refresh before adding again.');}
@@ -69,7 +75,7 @@ export async function changePunchList(env:AppEnv,owner:string,input:Record<strin
    result=await env.DB.prepare('UPDATE punch_tasks SET completed_at=?,completed_by=?,updated_at=?,revision=revision+1 WHERE id=? AND revision=? AND completed_at IS NULL').bind(now,owner,now,itemId,rev).run();
   }else if(action==='reopen'){
    result=await env.DB.prepare('UPDATE punch_tasks SET completed_at=NULL,completed_by=NULL,updated_at=?,revision=revision+1 WHERE id=? AND revision=? AND completed_at IS NOT NULL').bind(now,itemId,rev).run();
-  }else throw new PunchError('Unknown punch list action.');
+  }else throw new PunchValidationError('Unknown punch list action.');
  }
  if(!result?.meta.changes)throw new PunchError('Change not saved. Another owner may have changed this item. Refresh the list and try again.');
  return {ok:true};

@@ -1,14 +1,14 @@
 {
   "schema": 1,
-  "version": "0.6.2.0",
+  "version": "0.6.3.0",
   "stage": "prelaunch",
   "base": {
-    "commit": "c85a8ae926dd6f59852806ae0bbed241ec8054f1",
-    "version": "0.6.1.0",
+    "commit": "955c449fa73606cb7e2062dc3980235026b6fed7",
+    "version": "0.6.2.0",
     "stage": "prelaunch"
   },
   "change": {
     "level": "update",
-    "reason": "Run application build, unit tests, and isolated authentication in GitHub Actions"
+    "reason": "Validate punch-list input and report formatting; distinguish owner-management and malformed-request errors"
   }
 }

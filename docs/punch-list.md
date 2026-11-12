@@ -6,6 +6,8 @@ The table shows Status, Item name, Created, and Completed. Open items use a gree
 
 All reads and writes require an active-owner session. Existing same-origin and JSON protections apply. Revision checks reject stale edits and competing status changes. Client identifiers prevent duplicate creation on retries. No mail is sent.
 
+Item names must be a single printable line. Create, edit, and bulk entry reject tabs, control characters, and Unicode line/paragraph separators before trimming; bulk CR/LF separators still delimit separate items. Invalid fields, identifiers, revisions, sort options, and report input return HTTP 400. Valid but stale revisions and duplicate-confirmation conflicts remain HTTP 409. A rejected bulk submission saves no items.
+
 ## Migration and local verification
 
 Migration 0011 is retained because it was already applied to the local preview. Migration 0012 copies those records into the simplified `punch_tasks` table, preserving names, creators, dates, completion attribution, and revisions. Previously claimed unfinished items become ordinary open items. The original `punch_items` and `punch_categories` tables remain as an unused legacy snapshot, preserving retired descriptions/categories rather than deleting user data. New writes only affect `punch_tasks`; do not roll back to the first preview's code, which would show that stale legacy snapshot.
@@ -41,10 +43,13 @@ sending to a listed owner. All report actions require an active sender.
 
 The report preview is immutable. Each recipient gets a separate escaped HTML
 report plus plain text, through the existing sender/reply-to configuration.
+Plain-text report cells collapse legacy whitespace/control characters and render
+literal pipes as `¦`, so stored labels cannot forge additional rows or columns.
+Stored snapshots remain unchanged, and HTML continues to escape original values.
 Report history distinguishes provider acceptance from inbox delivery. Only
 pending or preflight-failed deliveries can be retried by the original sender;
 sending/uncertain outcomes require provider investigation. Partial success is
-shown per recipient. The existing global/recipient limits also apply, plus a
+shown per recipient. The separate report budget and recipient limits also apply, plus a
 20-actions-per-owner/hour report limit. Prepared but unsent reports remain in
 history. There is no automatic sending worker or retention cleanup in this batch.
 

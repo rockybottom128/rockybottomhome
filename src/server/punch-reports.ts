@@ -1,40 +1,43 @@
 import type {AppEnv} from './env.ts';
 import {normalizeEmail} from './env.ts';
-import {active,readPunchList,PunchError} from './punch-list.ts';
+import {active,readPunchList,PunchError,PunchValidationError} from './punch-list.ts';
 export const reportDeliveryMode=(env:AppEnv)=>env.MAIL_MODE==='test'?'test':env.MAIL_MODE==='resend'?'resend':'unavailable';
 type Item={label:string;created_at:number;completed_at:number|null;creator_email:string;completed_email:string|null};
 type Report={id:string;actor_id:string;created_at:number;options_json:string;items_json:string};
 const escape=(s:string)=>s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
+// Legacy snapshots remain immutable; plain-text cells cannot introduce extra
+// lines or pipe-delimited columns. HTML continues to escape the original text.
+const plainCell=(s:string)=>s.replace(/[\s\u0000-\u001f\u007f-\u009f]+/g,' ').replace(/\|/g,'¦').trim();
 export function reportBody(report:Report,attribution:boolean){
  const options=JSON.parse(report.options_json),items=JSON.parse(report.items_json) as Item[];
  const date=(n:number)=>new Intl.DateTimeFormat('en-US',{timeZone:options.timeZone,dateStyle:'medium',timeStyle:'short'}).format(n);
  const heading=`Rocky Bottom punch list · ${items.length} items`;
  const description=`${options.includeCompleted==='true'?'Open and completed':'Open only'} · ${options.sort} ${options.direction} · ${options.timeZone} · Snapshot ${date(report.created_at)}`;
  const rows=items.map(i=>[i.completed_at===null?'Open':'Completed',i.label,date(i.created_at)+(attribution?' — '+i.creator_email:''),i.completed_at===null?'—':date(i.completed_at)+(attribution?' — '+i.completed_email:'')]);
- return {text:heading+'\n'+description+'\n\n'+rows.map(r=>r.join(' | ')).join('\n'),html:`<h1>${escape(heading)}</h1><p>${escape(description)}</p><table cellpadding="8" border="1" style="border-collapse:collapse"><thead><tr>${['Status','Item','Created','Completed'].map(x=>`<th scope="col">${x}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>'<tr>'+r.map(x=>`<td>${escape(x)}</td>`).join('')+'</tr>').join('')}</tbody></table>`};
+ return {text:heading+'\n'+description+'\n\n'+rows.map(r=>r.map(plainCell).join(' | ')).join('\n'),html:`<h1>${escape(heading)}</h1><p>${escape(description)}</p><table cellpadding="8" border="1" style="border-collapse:collapse"><thead><tr>${['Status','Item','Created','Completed'].map(x=>`<th scope="col">${x}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>'<tr>'+r.map(x=>`<td>${escape(x)}</td>`).join('')+'</tr>').join('')}</tbody></table>`};
 }
 export async function prepareReport(env:AppEnv,actor:string,input:Record<string,unknown>){
  await active(env,actor);
- if(typeof input.id!=='string'||!/^[-a-f0-9]{36}$/.test(input.id))throw new PunchError('Invalid report identifier.');
+ if(typeof input.id!=='string'||!/^[-a-f0-9]{36}$/.test(input.id))throw new PunchValidationError('Invalid report identifier.');
  const old=await env.DB.prepare('SELECT * FROM punch_reports WHERE id=? AND actor_id=?').bind(input.id,actor).first<Report>();
  // A retried preparation returns its immutable original snapshot; it never creates another send.
  if(old)return reportPreview(env,old);
  const timeZone=typeof input.timeZone==='string'?input.timeZone:'America/New_York';
- try{new Intl.DateTimeFormat('en-US',{timeZone}).format();}catch{throw new PunchError('Invalid report time zone.');}
+ try{new Intl.DateTimeFormat('en-US',{timeZone}).format();}catch{throw new PunchValidationError('Invalid report time zone.');}
  const params=new URLSearchParams({sort:String(input.sort??'created'),direction:String(input.direction??'desc'),includeCompleted:String(input.includeCompleted??false)});
  const result=await readPunchList(env,actor,params,true);
- if(!result.items.length)throw new PunchError('No matching items to email.');
- if(!Array.isArray(input.owners)||input.owners.length>10||typeof input.custom!=='string'||input.custom.length>2600)throw new PunchError('Choose up to 10 recipients.');
+ if(!result.items.length)throw new PunchValidationError('No matching items to email.');
+ if(!Array.isArray(input.owners)||input.owners.length>10||typeof input.custom!=='string'||input.custom.length>2600)throw new PunchValidationError('Choose up to 10 recipients.');
  const recipients=new Map<string,{owner:string|null;attribution:number}>();
  for(const id of input.owners){
-  if(typeof id!=='string')throw new PunchError('Invalid owner selection.');
+  if(typeof id!=='string')throw new PunchValidationError('Invalid owner selection.');
   const owner=await env.DB.prepare("SELECT id,email_normalized FROM owner_accounts WHERE id=? AND status IN ('active','invited')").bind(id).first<{id:string;email_normalized:string}>();
   if(!owner)throw new PunchError('An owner selection is no longer available. Refresh the page.');
   recipients.set(owner.email_normalized,{owner:owner.id,attribution:1});
  }
  // Explicit custom recipients always receive the privacy-reduced report, including duplicates.
- for(const raw of input.custom.split(/[\s,;]+/).filter(Boolean)){let email:string;try{email=normalizeEmail(raw);}catch{throw new PunchError('Check the custom email addresses.');}recipients.set(email,{owner:null,attribution:0});}
- if(!recipients.size||recipients.size>10)throw new PunchError('Choose between 1 and 10 distinct recipients.');
+ for(const raw of input.custom.split(/[\s,;]+/).filter(Boolean)){let email:string;try{email=normalizeEmail(raw);}catch{throw new PunchValidationError('Check the custom email addresses.');}recipients.set(email,{owner:null,attribution:0});}
+ if(!recipients.size||recipients.size>10)throw new PunchValidationError('Choose between 1 and 10 distinct recipients.');
  const report={id:input.id,actor_id:actor,created_at:Date.now(),options_json:JSON.stringify({...Object.fromEntries(params),timeZone}),items_json:JSON.stringify(result.items)};
  await env.DB.batch([
   env.DB.prepare('INSERT INTO punch_reports VALUES (?,?,?,?,?)').bind(report.id,actor,report.created_at,report.options_json,report.items_json),
@@ -54,7 +57,7 @@ export async function reportHistory(env:AppEnv,actor:string){
 type Sender=(to:string,text:string,html:string,key:string)=>Promise<string>;
 export async function deliverReport(env:AppEnv,actor:string,id:unknown,send:Sender){
  await active(env,actor);
- if(typeof id!=='string')throw new PunchError('Invalid report identifier.');
+ if(typeof id!=='string')throw new PunchValidationError('Invalid report identifier.');
  const report=await env.DB.prepare('SELECT * FROM punch_reports WHERE id=? AND actor_id=?').bind(id,actor).first<Report>();
  if(!report)throw new PunchError('Report unavailable for this sender.');
  const deliveries=await env.DB.prepare('SELECT id FROM punch_report_deliveries WHERE report_id=?').bind(id).all<{id:string}>();

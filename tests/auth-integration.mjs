@@ -66,10 +66,21 @@ try {
  assert.match(html,/Owner password set or reset/);
  assert.doesNotMatch(html,/Calendar controls still use fictional browser data/);
  // Report APIs: active-owner gate, CSRF, all-page snapshot and local fake delivery.
+ for(const path of ['/api/owner/bookings','/api/visitor/bookings','/api/visitor/profile','/api/owner/visitor-allowlist','/api/owner/punch-list','/api/owner/punch-reports','/api/owner/invite']){
+  const malformed=await fetch(base+path,{method:'POST',headers:{'content-type':'application/json',origin:base,cookie:ownerCookie},body:'{'});
+  assert.equal(malformed.status,400,path+' must treat malformed JSON as invalid input');
+  assert.equal((await malformed.json()).error,'Invalid request.');
+ }
+ assert.equal((await fetch(base+'/api/owner/punch-list?sort=invalid',{headers:{cookie:ownerCookie}})).status,400);
+ assert.equal((await post('/api/owner/punch-list',{action:'create',id:crypto.randomUUID(),label:'Bad\nlabel'},ownerCookie)).status,400);
  assert.equal((await post('/api/owner/punch-reports',{action:'prepare'})).status,401);
  const bulkId=crypto.randomUUID();
  assert.equal((await post('/api/owner/punch-list',{action:'bulk-create',id:bulkId,labels:Array.from({length:55},(_,i)=>'Fixture task '+i).join('\n')},ownerCookie)).status,200);
+ const punchItem=db.prepare('SELECT id,revision FROM punch_tasks ORDER BY created_at LIMIT 1').get();
+ assert.equal((await post('/api/owner/punch-list',{action:'edit',id:punchItem.id,revision:punchItem.revision,label:'Bad\u0007label'},ownerCookie)).status,400);
+ assert.equal((await post('/api/owner/punch-list',{action:'edit',id:punchItem.id,revision:punchItem.revision+1,label:'Stale edit'},ownerCookie)).status,409);
  const reportInput={action:'prepare',id:crypto.randomUUID(),owners:[],custom:'report-recipient@example.com',sort:'name',direction:'asc',includeCompleted:false,timeZone:'America/New_York'};
+ assert.equal((await post('/api/owner/punch-reports',{...reportInput,sort:'invalid'},ownerCookie)).status,400);
  assert.equal((await post('/api/owner/punch-reports',reportInput,ownerCookie,'https://evil.example')).status,400);
  const reportResponse=await post('/api/owner/punch-reports',reportInput,ownerCookie);assert.equal(reportResponse.status,200);const report=await reportResponse.json();assert.match(report.preview,/55 items/);
  assert.equal(report.deliveryMode,'test');assert.equal((await post('/api/owner/punch-reports',{action:'send',id:report.id,deliveryMode:'resend'},ownerCookie)).status,409);
@@ -79,7 +90,8 @@ try {
  assert.equal(db.prepare("SELECT count(*) n FROM local_test_mail WHERE recipient='report-recipient@example.com'").get().n,1);
  const owner=db.prepare("SELECT id FROM owner_accounts WHERE email_normalized='owner@example.com'").get();
  assert.equal(await mailBudget('report'),1,'Replayed report sends do not spend another allowance');
- assert.equal((await post('/api/owner/remove',{id:owner.id},ownerCookie)).status,400,'Last active owner protected');
+ assert.equal((await post('/api/owner/remove',{id:owner.id},ownerCookie)).status,409,'Last active owner protected with a conflict response');
+ assert.equal((await post('/api/owner/remove',{id:'unknown-owner'},ownerCookie)).status,404);
  assert.equal((await fetch(base+'/owner/dashboard',{headers:{cookie:ownerCookie},redirect:'manual'})).status,200);
  assert.equal((await post('/api/owner/invite',{email:'visitor@example.com'},ownerCookie)).status,200);
  const secondRecovery=mail('visitor@example.com').match(/#token=([^\s]+)/)[1];
@@ -101,6 +113,7 @@ try {
  assert.deepEqual(competing.map(r=>r.status).sort(),[200,409]);
  assert.equal((await calendar()).revision,2);
  assert.equal((await post('/api/owner/remove',{id:second.id},ownerCookie)).status,200);
+ assert.equal((await post('/api/owner/remove',{id:second.id},ownerCookie)).status,404,'Repeated removal does not claim a new successful change');
  assert.equal((await fetch(base+'/owner/dashboard',{headers:{cookie:secondCookie},redirect:'manual'})).status,303,'Removed owner session is immediately invalidated');
  assert.equal((await change({revision:2,action:'add',period:available},secondCookie)).status,401);
  db.exec("UPDATE email_challenges SET last_sent_at=0");
@@ -259,7 +272,14 @@ try {
  const expired=mail('visitor@example.com').match(/\d{8}/)[0];db.exec('UPDATE email_challenges SET expires_at=0');
  assert.equal((await post('/api/visitor/verify',{email:'visitor@example.com',code:expired})).status,400,'Expired challenge rejected');
  await post('/api/owner/visitor-demo',{enabled:false},ownerCookie);
- // Only this disposable fixture: verify older schema produces actionable errors.
+ // Only this disposable fixture: exhaust the invitation reserve after saving.
+ db.prepare('INSERT OR REPLACE INTO request_limits(key,count,expires_at) VALUES (?,5,?)').run(await digest('mail-budget:owner',env.OTP_SECRET),Date.now()+86400000);
+ const savedInvite=await post('/api/owner/invite',{email:'limited-invite@example.com'},ownerCookie);
+ assert.equal(savedInvite.status,429,'Real auth provider preserves the invitation email rate limit');
+ const savedInviteBody=await savedInvite.json();assert.equal(savedInviteBody.invitationSaved,true);assert.match(savedInviteBody.error,/invitation was saved/);
+ assert.equal(db.prepare("SELECT status FROM owner_accounts WHERE email_normalized='limited-invite@example.com'").get().status,'invited');
+ assert.equal((await post('/api/owner/invite',{email:'limited-invite@example.com'},ownerCookie)).status,409);
+ // Verify older schema produces actionable errors.
  db.exec('DROP TABLE punch_report_deliveries; DROP TABLE punch_reports; DROP TABLE punch_batches;');
  const oldSchema=await (await fetch(base+'/api/owner/punch-list',{headers:{cookie:ownerCookie}})).json();assert.equal(oldSchema.bulkAvailable,false);assert.equal(oldSchema.reportsAvailable,false);
  for(const path of ['/api/owner/punch-list','/api/owner/punch-reports']){

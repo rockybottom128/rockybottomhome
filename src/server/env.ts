@@ -54,7 +54,9 @@ export async function readJson(request: Pick<Request, 'body'>, maxBytes = 4096):
     chunks.push(value);
   }
   const bytes=new Uint8Array(length);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.length;}
-  const parsed=JSON.parse(new TextDecoder().decode(bytes));
+  let parsed:unknown;
+  try{parsed=JSON.parse(new TextDecoder().decode(bytes));}
+  catch{throw new Error('Invalid request.');}
   if(!parsed||typeof parsed!=='object'||Array.isArray(parsed))throw new Error('Invalid request.');
-  return parsed;
+  return parsed as Record<string,unknown>;
 }
