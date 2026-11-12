@@ -1,2 +1,17 @@
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: no-referrer
+  Content-Security-Policy: base-uri 'self'; object-src 'none'; frame-ancestors 'none'
+  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https:; font-src 'self'; connect-src 'self'; frame-src 'none'; form-action 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'
+
+# Absolute rules match hosts, not schemes. Limit HSTS to deployed HTTPS hosts;
+# do not set it for loopback previews. No subdomain/preload commitment.
+https://rockybottomhome.com/*
+  Strict-Transport-Security: max-age=31536000
+
+https://:worker.accts-e61.workers.dev/*
+  Strict-Transport-Security: max-age=31536000
+
 /version.json
   Cache-Control: no-store
