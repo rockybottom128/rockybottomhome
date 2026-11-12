@@ -2,6 +2,16 @@
 
 Last verified: **2026-10-10**, after PR #9. This is the repository's operational configuration reference. Update the verification date and evidence when changing infrastructure. Historical chat summaries and screenshots are supporting evidence, not current configuration authority. Secret values and account recovery codes must never be included here.
 
+## Email recovery migration 0015 — dev verified, production pending
+
+The 0.6.5.0 batch adds review outcome/revision columns to booking outbox and report delivery records, plus an append-only `email_recovery_reviews` table. Migration 0015 changes no existing delivery state, queues no email, and deletes no data. Apply it before this code: owner dashboard/history reads require the columns. The migration was exercised in disposable local databases before the authorized shared-dev publication below.
+
+Shared dev applies pending migrations through its guarded deploy after publication is authorized. Production requires separately approved backup/recovery preparation and migration application before owner promotion. Code rollback retains the additive schema and all review history; reviewed records remain `uncertain`, so older send routes still cannot retry them. Older UI will not show the recorded review outcome. Review notes/receipt IDs are owner-only, retained history and excluded from expired-auth cleanup. The [owner review policy](auth-setup.md#follow-up-before-unrestricted-operation) defines evidence, concurrency and no-resend behavior.
+
+Verified on **2026-11-12** after explicit dev publication/migration approval: application commit `1624c3e21bc725bfcc9546c2f6b569d860703ebd` and initial dev snapshot `263505c7ac35ee37d4e3ca7db40370974bb029f8` share tree `a71dc59919db502fd88ed051dbe4b4cab56452d9`. Shared-dev [build 455843d3-058c-4e61-9499-e510b7c8c166](https://dash.cloudflare.com/e6144913ec6fa3b523d5d7e50cce2c40/workers/services/view/rockybottomhome-auth-dev/production/builds/455843d3-058c-4e61-9499-e510b7c8c166) succeeded and live `/version.json` matched that snapshot at 0.6.5.0. The guarded deployment applies pending migrations to the validated dev database and stops on failure before publishing code; its success is the evidence that migration 0015 was applied. No independent migration-catalog query was available through this contributor account's local Cloudflare credentials.
+
+Both Cloudflare builds and application/version CI passed. Read-only live checks confirmed the owner dashboard redirects anonymous users to sign-in and the new review API returns 401 with `no-store` and security headers. No remote mail or review records were created for testing. [PR #24](https://github.com/rockybottom128/rockybottomhome/pull/24) requests owner review. Production still served 0.6.4.0 at `c943641b251d9e8ad8daf6c4c8ca2e2c9ed0e5d8`; production migration 0015 and promotion remain pending. This documentation follow-up retains the verified application code.
+
 ## Evidence and ownership
 
 - Repository configuration: Wrangler files, `scripts/production/build-target.mjs`, development publishing scripts, migrations, and GitHub workflows.

@@ -307,6 +307,35 @@ try {
  assert.equal(db.prepare("SELECT count(*) n FROM visitors WHERE id IN ('cleanup-live','cleanup-requesting')").get().n,2);
  assert.equal(db.prepare("SELECT count(*) n FROM email_challenges WHERE visitor_id='cleanup-live'").get().n,1);
  assert.equal((await fetch(base+'/owner/dashboard/',{headers:{cookie:ownerCookie}})).status,200,'Cleanup preserves the signed-in owner');
+ // Review-only email recovery: real owner gate, CSRF, individual report targets,
+ // idempotent audit, stale revisions and no sends through existing retry routes.
+ const oldAttempt=Date.now()-16*60000;
+ db.prepare("INSERT INTO email_outbox(id,booking_id,booking_revision,kind,deduplication_key,due_at,status,payload_json,created_at,attempted_at) VALUES ('recovery-mail',?,3,'confirmation','recovery-mail',0,'sending',?,0,?)").run(booking.id,JSON.stringify({subject:'Fixture',text:'Review fixture only'}),oldAttempt);
+ db.prepare("INSERT INTO punch_report_deliveries(id,report_id,recipient,include_attribution,status,attempted_at) VALUES ('recovery-recipient',?,'recovery@example.com',0,'sending',?)").run(report.id,oldAttempt);
+ const recoveryPath='/api/owner/email-recovery';
+ assert.equal((await fetch(base+recoveryPath)).status,401);
+ assert.equal((await post(recoveryPath,{})).status,401);
+ assert.equal((await post(recoveryPath,{},ownerCookie,'https://attacker.invalid')).status,400);
+ assert.equal((await fetch(base+recoveryPath,{method:'POST',headers:{origin:base,cookie:ownerCookie,'content-type':'application/json'},body:'{'})).status,400);
+ const recoveryList=await (await fetch(base+recoveryPath,{headers:{cookie:ownerCookie}})).json();
+ assert.ok(recoveryList.items.some(item=>item.id==='recovery-mail'&&item.canFlag));
+ const recoveryMailCount=db.prepare('SELECT count(*) n FROM local_test_mail').get().n;
+ for(const [kind,id] of [['booking','recovery-mail'],['report','recovery-recipient']]){
+  const flag={kind,id,revision:0,outcome:'flagged',request_key:crypto.randomUUID()};
+  assert.equal((await post(recoveryPath,flag,ownerCookie)).status,200);
+  assert.equal((await post(recoveryPath,flag,ownerCookie)).status,200);
+  const reviewInput={kind,id,revision:1,outcome:'not_accepted',evidence:'Provider confirmed this fictional message was not accepted.',confirmed:true,request_key:crypto.randomUUID()};
+  assert.equal((await post(recoveryPath,reviewInput,ownerCookie)).status,200);
+  assert.equal((await post(recoveryPath,{...reviewInput,request_key:crypto.randomUUID()},ownerCookie)).status,409);
+  const history=await (await fetch(base+recoveryPath+'?kind='+kind+'&id='+id,{headers:{cookie:ownerCookie}})).json();
+  assert.equal(history.history.length,2);assert.equal(history.history[0].outcome,'not_accepted');
+ }
+ const noResend=await (await post('/api/owner/bookings',{action:'send-email',email_id:'recovery-mail'},ownerCookie)).json();assert.equal(noResend.emailStatus,'uncertain');
+ await post('/api/owner/punch-reports',{action:'send',id:report.id,deliveryMode:'test'},ownerCookie);
+ assert.equal(db.prepare('SELECT count(*) n FROM local_test_mail').get().n,recoveryMailCount,'Recovery cannot send email');
+ const reviewedDashboard=await (await fetch(base+'/owner/dashboard/',{headers:{cookie:ownerCookie}})).text();
+ assert.match(reviewedDashboard,/Review uncertain emails/);assert.match(reviewedDashboard,/Save review — no email sent/);
+ assert.equal(db.prepare("SELECT count(*) n FROM audit_events WHERE action='email_delivery_reviewed'").get().n,4);
  // Verify older schema produces actionable errors.
  db.exec('DROP TABLE punch_report_deliveries; DROP TABLE punch_reports; DROP TABLE punch_batches;');
  const oldSchema=await (await fetch(base+'/api/owner/punch-list',{headers:{cookie:ownerCookie}})).json();assert.equal(oldSchema.bulkAvailable,false);assert.equal(oldSchema.reportsAvailable,false);

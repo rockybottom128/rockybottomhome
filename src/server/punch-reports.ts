@@ -46,12 +46,12 @@ export async function prepareReport(env:AppEnv,actor:string,input:Record<string,
  return reportPreview(env,report);
 }
 async function reportPreview(env:AppEnv,report:Report){
- const recipients=await env.DB.prepare("SELECT recipient,include_attribution,status,(provider_id='local-test') localTest FROM punch_report_deliveries WHERE report_id=? ORDER BY recipient").bind(report.id).all();
+ const recipients=await env.DB.prepare("SELECT recipient,include_attribution,status,recovery_outcome,(provider_id='local-test') localTest FROM punch_report_deliveries WHERE report_id=? ORDER BY recipient").bind(report.id).all();
  return {id:report.id,preview:reportBody(report,false).text,recipients:recipients.results,deliveryMode:reportDeliveryMode(env)};
 }
 export async function reportHistory(env:AppEnv,actor:string){
  await active(env,actor);
- const rows=(await env.DB.prepare(`SELECT r.id,r.actor_id,r.created_at,d.recipient,d.status,(d.provider_id='local-test') localTest FROM punch_reports r JOIN punch_report_deliveries d ON d.report_id=r.id ORDER BY r.created_at DESC,d.recipient LIMIT 100`).all<{id:string;actor_id:string;created_at:number;recipient:string;status:string;localTest:number|null}>()).results;
+ const rows=(await env.DB.prepare(`SELECT r.id,r.actor_id,r.created_at,d.recipient,d.status,d.recovery_outcome,(d.provider_id='local-test') localTest FROM punch_reports r JOIN punch_report_deliveries d ON d.report_id=r.id ORDER BY r.created_at DESC,d.recipient LIMIT 100`).all<{id:string;actor_id:string;created_at:number;recipient:string;status:string;recovery_outcome:string|null;localTest:number|null}>()).results;
  return rows.map(({actor_id,...row})=>({...row,canSend:actor_id===actor&&['pending','failed'].includes(row.status)}));
 }
 type Sender=(to:string,text:string,html:string,key:string)=>Promise<string>;
@@ -70,9 +70,9 @@ export async function deliverReport(env:AppEnv,actor:string,id:unknown,send:Send
    if(claimed.owner_id&&!await env.DB.prepare("SELECT id FROM owner_accounts WHERE id=? AND status IN ('active','invited')").bind(claimed.owner_id).first())throw new PunchError('Selected owner was removed.');
    const body=reportBody(report,Boolean(claimed.include_attribution));
    receipt=await send(claimed.recipient,body.text,body.html,d.id);
-  }catch(e){await env.DB.prepare("UPDATE punch_report_deliveries SET status=? WHERE id=?").bind(e&&typeof e==='object'&&'uncertain' in e?'uncertain':'failed',d.id).run();continue;}
+  }catch(e){await env.DB.prepare("UPDATE punch_report_deliveries SET status=? WHERE id=? AND status='sending' AND recovery_revision=0").bind(e&&typeof e==='object'&&'uncertain' in e?'uncertain':'failed',d.id).run();continue;}
   // If receipt persistence fails, keep sending/unknown; never make it retryable.
-  await env.DB.prepare("UPDATE punch_report_deliveries SET status='sent',sent_at=?,provider_id=? WHERE id=?").bind(Date.now(),receipt,d.id).run();
+  await env.DB.prepare("UPDATE punch_report_deliveries SET status='sent',sent_at=?,provider_id=? WHERE id=? AND status='sending' AND recovery_revision=0").bind(Date.now(),receipt,d.id).run();
  }
  return reportPreview(env,report);
 }

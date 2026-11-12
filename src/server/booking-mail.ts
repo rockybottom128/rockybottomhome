@@ -1,5 +1,5 @@
 import type {AppEnv} from './env';
-export type BookingEmail={id:string;booking_id:string;booking_revision:number;kind:string;status:string;payload_json:string;created_at:number;attempted_at:number|null;sent_at:number|null;provider_message_id:string|null};
+export type BookingEmail={id:string;booking_id:string;booking_revision:number;kind:string;status:string;payload_json:string;created_at:number;attempted_at:number|null;sent_at:number|null;provider_message_id:string|null;recovery_outcome:string|null};
 export class MessageConflict extends Error {}
 export function bookingEmailText(status:string,start:number,end:number,reason:string,origin:string){
  const date=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',dateStyle:'full',timeStyle:'short'});
@@ -46,18 +46,18 @@ export async function deliverBookingEmail(env:AppEnv,id:string,send:Sender){
   receipt=await send(visitor.email_normalized,payload.subject,payload.text,claimed.deduplication_key);
  }catch(error){
   const status=error&&typeof error==='object'&&'uncertain' in error?'uncertain':'failed';
-  await env.DB.prepare("UPDATE email_outbox SET status=? WHERE id=? AND status='sending'").bind(status,id).run();
-  return status;
+  const saved=await env.DB.prepare("UPDATE email_outbox SET status=? WHERE id=? AND status='sending' AND recovery_revision=0 AND attempted_at=?").bind(status,id,claimed.attempted_at).run();
+  return saved.meta.changes===1?status:(await env.DB.prepare('SELECT status FROM email_outbox WHERE id=?').bind(id).first<{status:string}>())?.status??'unavailable';
  }
  // A database failure after provider acceptance leaves 'sending', never a retryable failure.
- await env.DB.prepare("UPDATE email_outbox SET status='sent',provider_message_id=?,sent_at=? WHERE id=? AND status='sending'").bind(receipt,Date.now(),id).run();
- return 'sent';
+ const saved=await env.DB.prepare("UPDATE email_outbox SET status='sent',provider_message_id=?,sent_at=? WHERE id=? AND status='sending' AND recovery_revision=0 AND attempted_at=?").bind(receipt,Date.now(),id,claimed.attempted_at).run();
+ return saved.meta.changes===1?'sent':(await env.DB.prepare('SELECT status FROM email_outbox WHERE id=?').bind(id).first<{status:string}>())?.status??'unavailable';
 }
 export async function bookingEmails(env:AppEnv,bookingIds:string[]){
  const emails:BookingEmail[]=[];
  for(let i=0;i<bookingIds.length;i+=90){
   const ids=bookingIds.slice(i,i+90);
-  emails.push(...(await env.DB.prepare(`SELECT id,booking_id,booking_revision,kind,status,payload_json,created_at,attempted_at,sent_at,provider_message_id FROM email_outbox WHERE booking_id IN (${ids.map(()=>'?').join(',')}) AND created_at IS NOT NULL ORDER BY created_at DESC`).bind(...ids).all<BookingEmail>()).results);
+  emails.push(...(await env.DB.prepare(`SELECT id,booking_id,booking_revision,kind,status,payload_json,created_at,attempted_at,sent_at,provider_message_id,recovery_outcome FROM email_outbox WHERE booking_id IN (${ids.map(()=>'?').join(',')}) AND created_at IS NOT NULL ORDER BY created_at DESC`).bind(...ids).all<BookingEmail>()).results);
  }
  return emails.sort((a,b)=>b.created_at-a.created_at);
 }
