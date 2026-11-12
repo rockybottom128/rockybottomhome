@@ -7,7 +7,7 @@ export async function sendVisitorCode(env:AppEnv,email:string,ip:string) {
   if(!await visitorRecipientAllowed(env,email))throw new Error('This email is not enabled for visitor testing. Use an approved test address or domain.');
   await limit(env,'send-ip:'+ip,10,3600000);
   const now=Date.now(),generation=token(),otp=code();
-  await env.DB.prepare('INSERT INTO visitors(id,email_normalized,created_at) VALUES (?,?,?) ON CONFLICT(email_normalized) DO NOTHING').bind(crypto.randomUUID(),email,now).run();
+  await env.DB.prepare('INSERT INTO visitors(id,email_normalized,created_at,last_verification_requested_at) VALUES (?,?,?,?) ON CONFLICT(email_normalized) DO UPDATE SET last_verification_requested_at=excluded.last_verification_requested_at').bind(crypto.randomUUID(),email,now,now).run();
   const visitor=await env.DB.prepare('SELECT id FROM visitors WHERE email_normalized=?').bind(email).first<{id:string}>();
   if (!visitor) throw new Error('Could not begin verification.');
   const hash=await digest(`${visitor.id}:${generation}:${otp}`,env.OTP_SECRET);

@@ -210,3 +210,9 @@ Migration 0009 preserves existing Allow entries and adds an empty Block list plu
 ## Website conversations migration 0010 — local candidate
 
 Additive migration 0010 creates shared conversation threads and entries. It preserves all existing accounts, bookings, settings and email history; no mail is queued by migration or message sends. Apply before the candidate code, using separately authorized remote preparation and the normal backup/recovery review. It is applied only to local preview during this batch. See [conversation behavior and local review](conversations.md) for access rules, revision handling, rollback and remaining notification work.
+
+## Hardening migration 0014 — pending release preparation
+
+The 0.6.4.0 candidate adds `visitors.last_verification_requested_at` and expiry indexes. Migration 0014 itself deletes no data and is tested only against disposable local databases during implementation. It must be applied before deploying this version: visitor verification requests write the new activity column. After an explicitly authorized shared-dev publication, the existing guarded dev deploy applies pending migrations to dev. Production still requires owner-approved backup/recovery preparation and migration application before promotion; this local batch performs no remote migration or deployment.
+
+Once deployed, background cleanup deletes only bounded batches of expired authentication records and abandoned, unreferenced, unverified registrations. There is no cleanup of business/audit history or automatic resend of uncertain mail. Review the detailed [eligibility and scheduling policy](auth-setup.md#security-headers-and-expired-record-cleanup) before promotion. Rolling application code back leaves the additive column/indexes in place and stops cleanup; it cannot restore expired records already removed. Active sessions, valid challenges, verified users and referenced visitor records are excluded from deletion.

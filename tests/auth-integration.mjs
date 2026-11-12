@@ -22,6 +22,16 @@ async function mailBudget(purpose){return db.prepare('SELECT count FROM request_
 function cookies(response){return response.headers.getSetCookie().map(s=>s.split(';')[0]).join('; ');}
 try {
  db.exec('DELETE FROM request_limits');
+ // Check the actual asset server and middleware, not just source declarations.
+ for(const path of ['/','/version.json','/owner/','/owner/dashboard/','/api/owner/punch-list']){
+  const r=await fetch(base+path,{redirect:'manual'});
+  assert.equal(r.headers.get('x-content-type-options'),'nosniff',path);
+  assert.equal(r.headers.get('x-frame-options'),'DENY',path);
+  assert.match(r.headers.get('content-security-policy')??'',/frame-ancestors 'none'/,path);
+  assert.match(r.headers.get('content-security-policy-report-only')??'',/script-src 'self'/,path);
+  assert.equal(r.headers.get('strict-transport-security'),null,'HTTP local preview must not set HSTS: '+path);
+  if(path==='/version.json')assert.equal(r.headers.get('cache-control'),'no-store');
+ }
  for(const path of ['/owner/dashboard','/owner/demo/','/owner/availability/'])assert.equal((await fetch(base+path,{redirect:'manual'})).status,303);
  assert.equal((await post('/api/owner/invite',{email:'intruder@example.com'})).status,401);
  assert.equal((await post('/api/owner/visitor-demo',{enabled:true})).status,401);
@@ -279,6 +289,24 @@ try {
  const savedInviteBody=await savedInvite.json();assert.equal(savedInviteBody.invitationSaved,true);assert.match(savedInviteBody.error,/invitation was saved/);
  assert.equal(db.prepare("SELECT status FROM owner_accounts WHERE email_normalized='limited-invite@example.com'").get().status,'invited');
  assert.equal((await post('/api/owner/invite',{email:'limited-invite@example.com'},ownerCookie)).status,409);
+ // Background cleanup uses only this disposable fixture. Keep a live challenge
+ // and a recently restarted registration while removing an abandoned visitor.
+ const old=Date.now()-3*86400000;
+ for(const id of ['cleanup-old','cleanup-live','cleanup-requesting'])db.prepare('INSERT INTO visitors(id,email_normalized,created_at) VALUES (?,?,?)').run(id,id+'@farts.cloud',old);
+ for(const id of ['cleanup-old','cleanup-live'])db.prepare("INSERT INTO email_challenges(visitor_id,generation,code_digest,expires_at,last_sent_at,delivery) VALUES (?,?,?,?,?,'sent')").run(id,id,'fixture-digest',id==='cleanup-live'?Date.now()+600000:old,old);
+ await post('/api/owner/visitor-demo',{enabled:true},ownerCookie);
+ assert.equal((await post('/api/visitor/send',{email:'cleanup-requesting@farts.cloud'})).status,200);
+ await post('/api/owner/visitor-demo',{enabled:false},ownerCookie);
+ assert.ok(db.prepare("SELECT last_verification_requested_at FROM visitors WHERE id='cleanup-requesting'").get().last_verification_requested_at>old);
+ db.prepare("DELETE FROM request_limits WHERE key='maintenance:expired-records:v1'").run();
+ for(let i=0;i<30&&db.prepare("SELECT id FROM visitors WHERE id='cleanup-old'").get();i++){
+  assert.equal((await fetch(base+'/owner/dashboard/',{headers:{cookie:ownerCookie}})).status,200);
+  await new Promise(resolve=>setTimeout(resolve,500));
+ }
+ assert.equal(db.prepare("SELECT id FROM visitors WHERE id='cleanup-old'").get(),undefined,'Background maintenance must remove an abandoned registration');
+ assert.equal(db.prepare("SELECT count(*) n FROM visitors WHERE id IN ('cleanup-live','cleanup-requesting')").get().n,2);
+ assert.equal(db.prepare("SELECT count(*) n FROM email_challenges WHERE visitor_id='cleanup-live'").get().n,1);
+ assert.equal((await fetch(base+'/owner/dashboard/',{headers:{cookie:ownerCookie}})).status,200,'Cleanup preserves the signed-in owner');
  // Verify older schema produces actionable errors.
  db.exec('DROP TABLE punch_report_deliveries; DROP TABLE punch_reports; DROP TABLE punch_batches;');
  const oldSchema=await (await fetch(base+'/api/owner/punch-list',{headers:{cookie:ownerCookie}})).json();assert.equal(oldSchema.bulkAvailable,false);assert.equal(oldSchema.reportsAvailable,false);
