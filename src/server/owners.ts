@@ -20,5 +20,5 @@ export async function inviteOwner(env:AppEnv,email:string,actor:string,bootstrap
   if(bootstrap) statements.unshift(env.DB.prepare("INSERT INTO setup_claims(id,created_at) VALUES ('initial-owner',?)").bind(now));
   await env.DB.batch(statements);
   // If delivery fails, the invitation remains. The owner can request another setup/reset link.
-  await ownerAuth(env).api.requestPasswordReset({body:{email,redirectTo:env.APP_ORIGIN+'/owner/reset'}});
+  await ownerAuth(env,'owner').api.requestPasswordReset({body:{email,redirectTo:env.APP_ORIGIN+'/owner/reset'}});
 }

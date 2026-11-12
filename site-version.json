@@ -1,14 +1,14 @@
 {
   "schema": 1,
-  "version": "0.6.0.0",
+  "version": "0.6.1.0",
   "stage": "prelaunch",
   "base": {
-    "commit": "a973351987533970699901d4c127180fc262d9eb",
-    "version": "0.5.0.0",
+    "commit": "66d14bfcdd9b33f1c11910b184f902d2fde6ad56",
+    "version": "0.6.0.0",
     "stage": "prelaunch"
   },
   "change": {
-    "level": "feature",
-    "reason": "Reorganize owner dashboard and add duplicate-aware bulk entry and private punch-list report emailing"
+    "level": "update",
+    "reason": "Isolate email budgets, protect owner password recovery, restrict conversation responses, and consolidate application regression tests"
   }
 }

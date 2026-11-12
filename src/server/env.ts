@@ -43,7 +43,16 @@ export async function readJson(request: Pick<Request, 'body'>, maxBytes = 4096):
   const reader=request.body?.getReader();
   if(!reader)throw new Error('Invalid request.');
   const chunks:Uint8Array[]=[];let length=0;
-  while(true){const {done,value}=await reader.read();if(done)break;length+=value.length;if(length>maxBytes){await reader.cancel();throw new Error('Request too large.');}chunks.push(value);}
+  while(true){
+    const {done,value}=await reader.read();if(done)break;length+=value.length;
+    if(length>maxBytes){
+      // A cloned Request tees the stream: cancellation can wait for the unread
+      // sibling forever. Reject immediately while still requesting cancellation.
+      void reader.cancel().catch(()=>{});
+      throw new Error('Request too large.');
+    }
+    chunks.push(value);
+  }
   const bytes=new Uint8Array(length);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.length;}
   const parsed=JSON.parse(new TextDecoder().decode(bytes));
   if(!parsed||typeof parsed!=='object'||Array.isArray(parsed))throw new Error('Invalid request.');

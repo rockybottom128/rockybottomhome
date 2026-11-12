@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
+import {digest} from '../src/server/crypto.ts';
 const base='http://127.0.0.1:4325';
 assert.ok(process.env.RB_ISOLATED_AUTH_TEST==='1','Run npm run test:auth:isolated instead of testing against the user preview');
 const config=JSON.parse(readFileSync('wrangler.auth-local.json','utf8'));
@@ -17,6 +18,7 @@ async function post(path,data={},cookie='',origin=base,extra={}) {
  return fetch(base+path,{method:'POST',headers:{'content-type':'application/json',origin,cookie,...extra},body:JSON.stringify(data),redirect:'manual'});
 }
 function mail(email) {return db.prepare('SELECT body FROM local_test_mail WHERE recipient=? ORDER BY created_at DESC LIMIT 1').get(email)?.body;}
+async function mailBudget(purpose){return db.prepare('SELECT count FROM request_limits WHERE key=?').get(await digest('mail-budget:'+purpose,env.OTP_SECRET))?.count??0;}
 function cookies(response){return response.headers.getSetCookie().map(s=>s.split(';')[0]).join('; ');}
 try {
  db.exec('DELETE FROM request_limits');
@@ -26,7 +28,21 @@ try {
  assert.equal((await post('/api/owner-auth/sign-up/email',{email:'intruder@example.com',password:'Not a real password.'})).status,404);
  assert.equal((await post('/api/visitor/send',{email:'visitor@example.com'},'','https://attacker.invalid')).status,400);
  const boot=await post('/api/owner/bootstrap',{},'',base,{authorization:'Bearer '+env.BOOTSTRAP_TOKEN});assert.ok([200,409].includes(boot.status));
- await post('/api/owner-auth/request-password-reset',{email:'owner@example.com',redirectTo:base+'/owner/reset'});
+ const beforeResetMail=db.prepare("SELECT COUNT(*) n FROM local_test_mail WHERE recipient='owner@example.com'").get().n;
+ const knownReset=await post('/api/owner-auth/request-password-reset',{email:'owner@example.com',redirectTo:'https://attacker.invalid/reset',purpose:'owner'});
+ const unknownReset=await post('/api/owner-auth/request-password-reset',{email:'unknown@example.com'});
+ assert.equal(knownReset.status,200);assert.equal(unknownReset.status,200);
+ assert.deepEqual(await knownReset.json(),await unknownReset.json(),'Recovery responses do not disclose account existence');
+ assert.equal(knownReset.headers.get('cache-control'),'no-store');
+ // waitUntil intentionally returns before mail. Wait for this request's new
+ // delivery rather than accidentally using the earlier bootstrap invitation.
+ for(let i=0;i<100&&db.prepare("SELECT COUNT(*) n FROM local_test_mail WHERE recipient='owner@example.com'").get().n===beforeResetMail;i++)await new Promise(resolve=>setTimeout(resolve,50));
+ assert.equal(db.prepare("SELECT COUNT(*) n FROM local_test_mail WHERE recipient='owner@example.com'").get().n,beforeResetMail+1,'Background recovery must actually deliver');
+ assert.equal(db.prepare("SELECT COUNT(*) n FROM local_test_mail WHERE recipient='unknown@example.com'").get().n,0);
+ assert.ok(mail('owner@example.com').includes(base+'/owner/reset#token='));
+ assert.ok(!mail('owner@example.com').includes('attacker.invalid'));
+ assert.equal(await mailBudget('owner'),1,'Bootstrap uses the invitation reserve');
+ assert.equal(await mailBudget('owner-reset'),1,'Public recovery cannot select the invitation reserve');
  const recovery=mail('owner@example.com').match(/#token=([^\s]+)/)[1];
  assert.equal(db.prepare('SELECT COUNT(*) AS n FROM auth_verification WHERE identifier LIKE ?').get('%'+recovery+'%').n,0,'Recovery tokens must be hashed at rest');
  const password='Local-only '+crypto.randomUUID();
@@ -62,6 +78,7 @@ try {
  await post('/api/owner/punch-reports',{action:'send',id:report.id,deliveryMode:'test'},ownerCookie);
  assert.equal(db.prepare("SELECT count(*) n FROM local_test_mail WHERE recipient='report-recipient@example.com'").get().n,1);
  const owner=db.prepare("SELECT id FROM owner_accounts WHERE email_normalized='owner@example.com'").get();
+ assert.equal(await mailBudget('report'),1,'Replayed report sends do not spend another allowance');
  assert.equal((await post('/api/owner/remove',{id:owner.id},ownerCookie)).status,400,'Last active owner protected');
  assert.equal((await fetch(base+'/owner/dashboard',{headers:{cookie:ownerCookie},redirect:'manual'})).status,200);
  assert.equal((await post('/api/owner/invite',{email:'visitor@example.com'},ownerCookie)).status,200);
@@ -220,6 +237,8 @@ try {
  assert.equal((await (await fetch(slotPath,{headers:{cookie:visitorCookie}})).json()).slots.length,8);
  const requestDashboard=await (await fetch(base+`/owner/dashboard/?month=${tomorrow.slice(0,7)}&day=${tomorrow}`,{headers:{cookie:ownerCookie}})).text();assert.match(requestDashboard,/Example Agent/);assert.match(requestDashboard,/Viewing canceled/);
  assert.equal(db.prepare('SELECT COUNT(*) n FROM access_jobs').get().n,0);assert.equal(db.prepare("SELECT COUNT(*) n FROM email_outbox WHERE status='sent'").get().n,3);
+ assert.equal(await mailBudget('booking'),3,'Owner and visitor booking routes use the booking allowance');
+ assert.equal(await mailBudget('visitor'),2,'Booking emails do not spend verification capacity');
  assert.match(mail('visitor@example.com'),/Cancel this test request/);
  assert.equal((await post('/api/owner/bookings',{...messageInput,revision:3,request_key:crypto.randomUUID()},ownerCookie)).status,409);
  const privateBookings=await (await fetch(base+'/api/visitor/bookings',{headers:{cookie:visitorCookie}})).text();assert.ok(!privateBookings.includes('payload_json'));assert.ok(!privateBookings.includes('Please reply if'));

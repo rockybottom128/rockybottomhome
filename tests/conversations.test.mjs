@@ -9,6 +9,23 @@ function setup(){const f=fixture();f.db.exec(`INSERT INTO owner_accounts(id,emai
  INSERT INTO bookings(id,visitor_id,slot_id,starts_at,ends_at,mode,source,status,created_at) VALUES ('b','v','s',100,200,'owner_coordinated','public','requested',1);`);return f;}
 const create=()=>({action:'create',visitor_id:'v',subject:'Viewing question',body:'Can our agent join us?',request_key:crypto.randomUUID()});
 const reply=(id,revision,body='Yes, that works.')=>({action:'reply',thread_id:id,revision,body,request_key:crypto.randomUUID()});
+test('inbox and history expose only the intended thread fields for either actor',async()=>{
+ const {db,env}=setup();try{
+  const input=create(),created=await changeConversation(env,owner,input);
+  const keys=['id','visitor_id','booking_id','subject','status','revision','created_at','updated_at'];
+  for(const actor of [visitor,owner]){
+   const inbox=await conversationInbox(env,actor),history=await conversationHistory(env,actor,created.id);
+   assert.deepEqual(Object.keys(inbox.threads[0]).sort(),[...keys,'email_normalized','preview'].sort());
+   assert.deepEqual(Object.keys(history.thread).sort(),keys.toSorted());
+   assert.equal(inbox.threads[0].email_normalized,'v@example.com');
+   assert.equal(inbox.threads[0].preview,input.body);
+   assert.equal(history.thread.subject,input.subject);
+   assert.ok(!JSON.stringify({inbox,history}).includes(input.request_key));
+  }
+  assert.equal((await conversationInbox(env,stranger)).threads.length,0);
+  await assert.rejects(conversationHistory(env,stranger,created.id),ConversationConflict);
+ }finally{db.close();}
+});
 test('either side starts threads; visitor grouping and shared attention count threads, not messages',async()=>{
  const {db,env}=setup();try{
  const a=await changeConversation(env,visitor,create());assert.equal(await conversationCount(env),1);
