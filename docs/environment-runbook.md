@@ -2,6 +2,12 @@
 
 Last verified: **2026-10-10**, after PR #9. This is the repository's operational configuration reference. Update the verification date and evidence when changing infrastructure. Historical chat summaries and screenshots are supporting evidence, not current configuration authority. Secret values and account recovery codes must never be included here.
 
+## Email recovery migration 0015 — local candidate
+
+The 0.6.5.0 batch adds review outcome/revision columns to booking outbox and report delivery records, plus an append-only `email_recovery_reviews` table. Migration 0015 changes no existing delivery state, queues no email, and deletes no data. Apply it before this code: owner dashboard/history reads require the columns. The migration has been exercised only in disposable local databases during implementation. No remote publication or database change is part of the local batch.
+
+Shared dev applies pending migrations through its guarded deploy after publication is authorized. Production requires separately approved backup/recovery preparation and migration application before owner promotion. Code rollback retains the additive schema and all review history; reviewed records remain `uncertain`, so older send routes still cannot retry them. Older UI will not show the recorded review outcome. Review notes/receipt IDs are owner-only, retained history and excluded from expired-auth cleanup. The [owner review policy](auth-setup.md#follow-up-before-unrestricted-operation) defines evidence, concurrency and no-resend behavior.
+
 ## Evidence and ownership
 
 - Repository configuration: Wrangler files, `scripts/production/build-target.mjs`, development publishing scripts, migrations, and GitHub workflows.

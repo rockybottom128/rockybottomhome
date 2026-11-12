@@ -1,14 +1,14 @@
 {
   "schema": 1,
-  "version": "0.6.4.0",
+  "version": "0.6.5.0",
   "stage": "prelaunch",
   "base": {
-    "commit": "bb6fe778f280bd67c41309c3c5ed1bbd7cc91cf7",
-    "version": "0.6.3.0",
+    "commit": "c943641b251d9e8ad8daf6c4c8ca2e2c9ed0e5d8",
+    "version": "0.6.4.0",
     "stage": "prelaunch"
   },
   "change": {
     "level": "update",
-    "reason": "Add security response headers and bounded background cleanup of expired authentication records"
+    "reason": "Add audited owner review for uncertain booking and report emails without enabling resend"
   }
 }

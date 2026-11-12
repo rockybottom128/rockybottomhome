@@ -17,7 +17,7 @@ export async function ownerCalendar(env:AppEnv,params:URLSearchParams,now=Date.n
  const row=await env.DB.prepare(`SELECT
   (SELECT COUNT(*) FROM bookings WHERE status='requested' AND ends_at>?) AS pending,
   (SELECT COUNT(*) FROM bookings WHERE status='approved' AND ends_at>?) AS approved,
-  (SELECT COUNT(*) FROM email_outbox WHERE created_at IS NOT NULL AND status IN ('pending','failed','uncertain','sending')) AS attention,
+  (SELECT COUNT(*) FROM email_outbox WHERE created_at IS NOT NULL AND status IN ('pending','failed','uncertain','sending') AND (recovery_outcome IS NULL OR recovery_outcome='unknown')) AS attention,
   (SELECT json_group_array(json_object('starts_at',starts_at,'status',status)) FROM bookings WHERE starts_at>=? AND starts_at<? AND status IN ('requested','approved')) AS dates,
   (SELECT json_group_array(json_object('id',b.id,'starts_at',b.starts_at,'ends_at',b.ends_at,'status',b.status,'revision',b.revision,'validation_status',b.validation_status,'cancellation_reason',b.cancellation_reason,'email_normalized',v.email_normalized,'profile_snapshot',b.profile_snapshot)) FROM (SELECT * FROM bookings WHERE starts_at>=? AND starts_at<? ORDER BY CASE WHEN status IN ('requested','approved') THEN 0 ELSE 1 END,starts_at,created_at DESC LIMIT 100) b JOIN visitors v ON v.id=b.visitor_id) AS bookings
  `).bind(now,now,uniqueInstant(days[0],0),uniqueInstant(plusDays(days.at(-1)!,1),0),uniqueInstant(day,0),uniqueInstant(plusDays(day,1),0)).first<{pending:number;approved:number;attention:number;dates:string;bookings:string}>();

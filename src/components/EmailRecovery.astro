@@ -1,0 +1,29 @@
+<section class="card" id="email-recovery" aria-labelledby="email-recovery-heading">
+ <h2 id="email-recovery-heading">Review uncertain emails</h2>
+ <p>Review booking emails and individual report recipients here. This only records what happened. It never sends or resends email.</p>
+ <p class="hint">After 15 minutes, an unfinished send can be flagged as uncertain. Check the email provider before recording acceptance or non-acceptance. A missing inbox message alone is not proof. Provider acceptance does not confirm inbox delivery.</p>
+ <button type="button" class="text-button" data-recovery-refresh>Refresh review list</button>
+ <p data-recovery-notice role="status"></p>
+ <ul data-recovery-list></ul>
+ <form data-recovery-form hidden>
+  <h3 data-recovery-selected></h3>
+  <label>Review outcome<select name="outcome" required>
+   <option value="unknown">Still unknown — do not resend</option>
+   <option value="accepted">Provider confirmed acceptance</option>
+   <option value="not_accepted">Provider confirmed non-acceptance</option>
+  </select></label>
+  <label data-receipt-label hidden>Provider receipt ID<input name="provider_receipt" maxlength="128" autocomplete="off" /></label>
+  <label>Evidence / review notes<textarea name="evidence" required minlength="10" maxlength="1000" rows="3"></textarea></label>
+  <p class="hint">Record when and how you checked. Do not paste passwords, verification links, access codes or API keys.</p>
+  <label class="check" data-confirm-label hidden><input type="checkbox" name="confirmed" /> I checked the provider record and this outcome matches it.</label>
+  <button type="submit" class="button">Save review — no email sent</button>
+ </form>
+ <div data-recovery-history></div>
+</section>
+<style>
+ #email-recovery {overflow-wrap:anywhere;}
+ #email-recovery li {margin-block:.75rem;}
+ #email-recovery form {margin-block:1rem;padding:1rem;border:1px solid var(--line, #d5ddd5);border-radius:.75rem;}
+ #email-recovery select,#email-recovery input:not([type=checkbox]),#email-recovery textarea {box-sizing:border-box;max-width:100%;width:100%;}
+</style>
+<script>import '../scripts/email-recovery';</script>
