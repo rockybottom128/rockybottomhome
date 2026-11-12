@@ -18,7 +18,7 @@ const handle:APIRoute=async({request})=>{
   if(input.action==='cancel'){
    const result=await changeBooking(env,{visitorId:visitor.id},input);
    let emailStatus='unknown';
-   try{emailStatus=await deliverBookingEmail(env,result.emailId,(to,subject,text,key)=>sendMail(env,to,subject,text,'visitor',key));}catch{}
+   try{emailStatus=await deliverBookingEmail(env,result.emailId,(to,subject,text,key)=>sendMail(env,to,subject,text,'booking',key));}catch{}
    return json({id:result.id,status:result.status,emailStatus});
   }
   return json({error:'Invalid booking action.'},400);

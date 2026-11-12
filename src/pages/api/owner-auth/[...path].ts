@@ -1,8 +1,9 @@
 import type { APIRoute } from 'astro';
-import { runtime } from '../../../server/runtime';
+import { runtime, waitUntil } from '../../../server/runtime';
 import { configured, json, normalizeEmail, noStore, readJson } from '../../../server/env';
-import { limit } from '../../../server/visitor-auth';
+import { limit, RateLimitError } from '../../../server/rate-limit';
 import { ownerAuth } from '../../../server/owner-auth';
+import { processOwnerPasswordReset } from '../../../server/owner-password-reset';
 export const prerender=false;
 export const ALL:APIRoute=async({request,params})=>{
   const env=runtime();if(!configured(env,request)) return json({error:'Owner sign-in is not configured.'},503);
@@ -17,12 +18,17 @@ export const ALL:APIRoute=async({request,params})=>{
       const input=await readJson(request.clone());
       if(path==='request-password-reset') {
         const email=normalizeEmail(input.email);
-        const owner=await env.DB.prepare("SELECT id FROM owner_accounts WHERE email_normalized=? AND status IN ('active','invited')").bind(email).first();
-        if(!owner) return path==='request-password-reset'?json({status:true,message:'If an owner account exists, instructions will be sent.'}):json({message:'Email or password is incorrect.'},401);
+        // Account lookup, throttling and delivery all happen off the response path.
+        // The callback destination and mail purpose are never supplied by the caller.
+        waitUntil(processOwnerPasswordReset(env,email,()=>ownerAuth(env).api.requestPasswordReset({body:{email,redirectTo:env.APP_ORIGIN+'/owner/reset'}})));
+        return json({status:true,message:'If an owner account exists, instructions will be sent.'});
       }
     }
     const response=await ownerAuth(env).handler(request);
     const headers=new Headers(response.headers);for(const [k,v] of Object.entries(noStore))headers.set(k,v);
     return new Response(response.body,{status:response.status,headers});
-  }catch{return json({message:'Unable to sign in. Please try again.'},400);}
+  }catch(error){
+    if(error instanceof RateLimitError)return json({message:'Too many requests. Please try again later.'},429,{'Retry-After':String(error.retryAfter)});
+    return json({message:'Unable to sign in. Please try again.'},400);
+  }
 };

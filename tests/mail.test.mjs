@@ -78,3 +78,67 @@ test('owner delivery is independent of visitor policy; missing DB policy fails c
   db.exec('DROP TABLE visitor_allowlist_entries');await assert.rejects(sendMail(env,'visitor@example.com','test','body'));assert.equal(calls.length,1);
  }finally{globalThis.fetch=original;db.close();}
 });
+
+test('exhausted verification budget cannot starve booking, reset, invitation or report mail',async()=>{
+ const {db,env}=mailFixture(),original=globalThis.fetch;let calls=0;
+ try{
+  env.VISITOR_EMAIL_DOMAINS='example.com';
+  globalThis.fetch=async()=>{calls++;return Response.json({id:'receipt'})};
+  db.exec("INSERT INTO owner_accounts VALUES ('o','owner@example.com',NULL,'active',0)");
+  db.exec("INSERT INTO punch_reports VALUES ('r','o',0,'{}','[]'); INSERT INTO punch_report_deliveries(id,report_id,recipient,include_attribution,status) VALUES ('d','r','owner@example.com',0,'sending')");
+  for(let i=0;i<60;i++)await sendMail(env,`guest${i}@example.com`,'Verification','code');
+  await assert.rejects(sendMail(env,'extra@example.com','Verification','code'),RateLimitError);
+  assert.equal(calls,60);
+  for(const purpose of ['booking','owner-reset','owner','report'])await sendMail(env,'owner@example.com','Notice','body',purpose,purpose==='report'?'d':undefined);
+  assert.equal(calls,64);
+  await assert.rejects(sendMail(env,'blocked@elsewhere.test','Booking','body','booking'),/not enabled/);
+  await assert.rejects(sendMail(env,'stranger@example.com','Reset','body','owner-reset'),/not authorized/);
+  await assert.rejects(sendMail(env,'owner@example.com','Report','body','report','wrong-delivery'),/not authorized/);
+  assert.equal(calls,64,'Isolated budgets never bypass recipient authorization');
+ }finally{globalThis.fetch=original;db.close();}
+});
+
+test('verification recipient bursts cannot spend owner limits or the shared verification allowance',async()=>{
+ const {db,env}=mailFixture(),original=globalThis.fetch;let calls=0;
+ try{
+  env.VISITOR_EMAIL_DOMAINS='example.com';
+  globalThis.fetch=async()=>{calls++;return Response.json({id:'receipt'})};
+  db.exec("INSERT INTO owner_accounts VALUES ('o','owner@example.com',NULL,'active',0)");
+  for(let i=0;i<10;i++)await sendMail(env,'owner@example.com','Code','body');
+  for(let i=0;i<65;i++)await assert.rejects(sendMail(env,'owner@example.com','Code','body'),RateLimitError);
+  await sendMail(env,'owner@example.com','Invite','body','owner');
+  await sendMail(env,'owner@example.com','Reset','body','owner-reset');
+  for(let i=0;i<50;i++)await sendMail(env,`other${i}@example.com`,'Code','body');
+  assert.equal(calls,62,'Rejected recipient bursts must not burn the verification budget');
+  await assert.rejects(sendMail(env,'last@example.com','Code','body'),RateLimitError);
+ }finally{globalThis.fetch=original;db.close();}
+});
+
+test('reset requests cannot use the invitation reserve; daily reservations remain bounded under concurrency',async()=>{
+ const {db,env}=mailFixture(),original=globalThis.fetch;let calls=0;
+ try{
+  globalThis.fetch=async()=>{calls++;return Response.json({id:'receipt'})};
+  for(let i=0;i<12;i++)db.prepare("INSERT INTO owner_accounts VALUES (?,?,NULL,'invited',0)").run('o'+i,`owner${i}@example.com`);
+  const sends=await Promise.allSettled(Array.from({length:12},(_,i)=>sendMail(env,`owner${i}@example.com`,'Reset','body','owner-reset')));
+  assert.equal(sends.filter(x=>x.status==='fulfilled').length,5);
+  assert.ok(sends.filter(x=>x.status==='rejected').every(x=>x.reason instanceof RateLimitError));
+  for(let i=0;i<5;i++)await sendMail(env,`owner${i}@example.com`,'Invite','body','owner');
+  await assert.rejects(sendMail(env,'owner5@example.com','Invite','body','owner'),RateLimitError);
+  assert.equal(calls,10);
+  db.exec('UPDATE request_limits SET expires_at=0');
+  await sendMail(env,'owner0@example.com','Reset','body','owner-reset');
+  assert.equal(calls,11,'Expired fixed windows permit a new send');
+ }finally{globalThis.fetch=original;db.close();}
+});
+
+test('owner reset recipients have a separate three-per-hour bound',async()=>{
+ const {db,env}=mailFixture(),original=globalThis.fetch;let calls=0;
+ try{
+  globalThis.fetch=async()=>{calls++;return Response.json({id:'receipt'})};
+  db.exec("INSERT INTO owner_accounts VALUES ('o','owner@example.com',NULL,'active',0)");
+  for(let i=0;i<3;i++)await sendMail(env,'owner@example.com','Reset','body','owner-reset');
+  await assert.rejects(sendMail(env,'owner@example.com','Reset','body','owner-reset'),RateLimitError);
+  await sendMail(env,'owner@example.com','Invite','body','owner');
+  assert.equal(calls,4);
+ }finally{globalThis.fetch=original;db.close();}
+});

@@ -5,6 +5,8 @@ export type ConversationThread={id:string;visitor_id:string;booking_id:string|nu
 const ownerGuard="EXISTS(SELECT 1 FROM owner_accounts WHERE id=? AND status='active')";
 const visitorGuard='EXISTS(SELECT 1 FROM visitors WHERE id=? AND email_verified_at IS NOT NULL)';
 const eligible="EXISTS(SELECT 1 FROM bookings WHERE visitor_id=v.id AND status IN ('requested','approved'))";
+// Deliberately exclude creator identity and retry keys from both public response shapes.
+const threadColumns='id,visitor_id,booking_id,subject,status,revision,created_at,updated_at';
 function actorGuard(actor:MessageActor){return actor.role==='owner'?ownerGuard:visitorGuard;}
 async function authorize(env:AppEnv,actor:MessageActor){
  const ok=await env.DB.prepare(`SELECT 1 WHERE ${actorGuard(actor)}`).bind(actor.id).first();
@@ -21,7 +23,7 @@ export async function conversationInbox(env:AppEnv,actor:MessageActor){
  await authorize(env,actor);
  const where=actor.role==='visitor'?'WHERE t.visitor_id=?':'';
  const args=actor.role==='visitor'?[actor.id]:[];
- const threads=(await env.DB.prepare(`SELECT t.*,v.email_normalized,
+ const threads=(await env.DB.prepare(`SELECT ${threadColumns.split(',').map(column=>'t.'+column).join(',')},v.email_normalized,
  (SELECT body FROM conversation_entries e WHERE e.thread_id=t.id AND e.kind='message' ORDER BY thread_revision DESC LIMIT 1) preview
  FROM conversation_threads t JOIN visitors v ON v.id=t.visitor_id ${where}
  ORDER BY t.updated_at DESC,t.id`).bind(...args).all<ConversationThread&{email_normalized:string;preview:string}>()).results;
@@ -30,7 +32,7 @@ export async function conversationInbox(env:AppEnv,actor:MessageActor){
 }
 export async function conversationHistory(env:AppEnv,actor:MessageActor,id:string){
  await authorize(env,actor);
- const thread=await env.DB.prepare(`SELECT * FROM conversation_threads WHERE id=? ${actor.role==='visitor'?'AND visitor_id=?':''}`).bind(...(actor.role==='visitor'?[id,actor.id]:[id])).first<ConversationThread>();
+ const thread=await env.DB.prepare(`SELECT ${threadColumns} FROM conversation_threads WHERE id=? ${actor.role==='visitor'?'AND visitor_id=?':''}`).bind(...(actor.role==='visitor'?[id,actor.id]:[id])).first<ConversationThread>();
  if(!thread)throw new ConversationConflict('Conversation unavailable. Refresh your messages.');
  const entries=(await env.DB.prepare('SELECT id,actor_role,actor_label,kind,body,created_at,thread_revision FROM conversation_entries WHERE thread_id=? ORDER BY thread_revision').bind(id).all()).results;
  return {thread,entries:actor.role==='owner'?entries:entries.map(e=>({...e,actor_label:e.actor_role==='owner'?'Owner':e.actor_label}))};

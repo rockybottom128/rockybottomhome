@@ -21,7 +21,7 @@ export const POST:APIRoute=async({request})=>{
    result={emailId:input.email_id};
   }else result=await changeBooking(env,{ownerId:owner.id},input);
   let emailStatus='unknown';
-  try{emailStatus=await deliverBookingEmail(env,result.emailId,(to,subject,text,key)=>sendMail(env,to,subject,text,'visitor',key));}catch{/* Saved action remains authoritative; the dashboard shows recovery status. */}
+  try{emailStatus=await deliverBookingEmail(env,result.emailId,(to,subject,text,key)=>sendMail(env,to,subject,text,'booking',key));}catch{/* Saved action remains authoritative; the dashboard shows recovery status. */}
   return json({...result,emailStatus});
  }catch(error){
   if(error instanceof RateLimitError)return json({error:error.message},429);
