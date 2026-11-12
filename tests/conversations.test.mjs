@@ -6,9 +6,83 @@ const owner={role:'owner',id:'o'},otherOwner={role:'owner',id:'o2'},visitor={rol
 function setup(){const f=fixture();f.db.exec(`INSERT INTO owner_accounts(id,email_normalized,status,created_at) VALUES ('o','one@example.com','active',1),('o2','two@example.com','active',1);
  INSERT INTO visitors(id,email_normalized,email_verified_at,created_at) VALUES ('v','v@example.com',1,1),('v2','v2@example.com',1,1),('unverified','u@example.com',NULL,1);
  INSERT INTO availability_slots VALUES ('s',100,200,'owner_coordinated',1);
- INSERT INTO bookings(id,visitor_id,slot_id,starts_at,ends_at,mode,source,status,created_at) VALUES ('b','v','s',100,200,'owner_coordinated','public','requested',1);`);return f;}
+ INSERT INTO bookings(id,visitor_id,slot_id,starts_at,ends_at,mode,source,status,created_at) VALUES ('b','v','s',100,200,'owner_coordinated','public','requested',1);`);f.db.prepare('UPDATE bookings SET ends_at=?').run(Date.now()+86400000);return f;}
 const create=()=>({action:'create',visitor_id:'v',subject:'Viewing question',body:'Can our agent join us?',request_key:crypto.randomUUID()});
 const reply=(id,revision,body='Yes, that works.')=>({action:'reply',thread_id:id,revision,body,request_key:crypto.randomUUID()});
+test('new topics expire at 30 days for both actors while existing conversations and retries remain available',async()=>{
+ const {db,env}=setup(),now=Date.now(),cutoff=now-30*86400000;
+ try{
+  for(const status of ['requested','approved']){
+   db.prepare('UPDATE bookings SET status=?,ends_at=?').run(status,cutoff+1);
+   for(const actor of [visitor,owner]){
+    assert.equal((await conversationInbox(env,actor,new URLSearchParams(),now)).visitors.length,1);
+    const input=create(),created=await changeConversation(env,actor,input,now);
+    db.prepare('UPDATE bookings SET ends_at=?').run(cutoff);
+    assert.equal((await conversationInbox(env,actor,new URLSearchParams(),now)).visitors.length,0);
+    await assert.rejects(changeConversation(env,actor,create(),now),ConversationConflict);
+    assert.deepEqual(await changeConversation(env,actor,input,now),created,'A saved send can still be retried safely');
+    await changeConversation(env,actor,reply(created.id,1),now);
+    assert.equal((await conversationHistory(env,actor,created.id)).entries.length,2);
+    db.prepare('UPDATE bookings SET ends_at=?').run(cutoff+1);
+   }
+  }
+  db.prepare("UPDATE bookings SET status='canceled',ends_at=?").run(now+86400000);
+  await assert.rejects(changeConversation(env,owner,create(),now),ConversationConflict);
+ }finally{db.close();}
+});
+test('creation rechecks viewing eligibility inside its transaction',async()=>{
+ const {db,env}=setup();try{
+  const batch=env.DB.batch;env.DB.batch=async statements=>{db.exec("UPDATE bookings SET ends_at=200");return batch(statements);};
+  await assert.rejects(changeConversation(env,visitor,create()),ConversationConflict);
+  assert.equal(db.prepare('SELECT COUNT(*) n FROM conversation_threads').get().n,0);
+  assert.equal(db.prepare('SELECT COUNT(*) n FROM conversation_entries').get().n,0);
+ }finally{db.close();}
+});
+test('inbox pages have deterministic ties, complete counts and visitor isolation',async()=>{
+ const {db,env}=setup();try{
+  const insert=db.prepare("INSERT INTO conversation_threads(id,visitor_id,subject,status,created_at,updated_at,creator_role,creator_id,request_key) VALUES (?,?,'Page fixture','needs_owner',1,100,'visitor',?,?)");
+  for(let i=0;i<405;i++){const id='t'+String(i).padStart(3,'0');insert.run(id,i===404?'v2':'v',i===404?'v2':'v',id);}
+  for(const actor of [owner,visitor]){
+   const expected=actor===owner?405:404,seen=[];let next=null;
+   do{const page=await conversationInbox(env,actor,new URLSearchParams(next?{after:next}:{}));
+    assert.ok(page.threads.length<=200);assert.equal(page.attention,expected);seen.push(...page.threads.map(t=>t.id));next=page.next;
+   }while(next);
+   assert.equal(seen.length,expected);assert.equal(new Set(seen).size,expected);assert.deepEqual(seen,seen.toSorted());
+  }
+  const first=await conversationInbox(env,owner);
+  assert.equal((await conversationInbox(env,stranger,new URLSearchParams({after:first.next}))).threads.length,1);
+  for(const after of ['bad','{}','[1]','[-1,"x"]','[1,""]','["1","x"]'])await assert.rejects(conversationInbox(env,owner,new URLSearchParams({after})),/Invalid message page/);
+ }finally{db.close();}
+});
+test('eligible recipients are paged without granting visitors access to other recipients',async()=>{
+ const {db,env}=setup(),now=Date.now();try{
+  for(let i=0;i<105;i++){
+   const id='person'+String(i).padStart(3,'0');db.prepare('INSERT INTO visitors(id,email_normalized,email_verified_at,created_at) VALUES (?,?,1,1)').run(id,id+'@example.com');
+   db.prepare("INSERT INTO bookings(id,visitor_id,slot_id,starts_at,ends_at,mode,source,status,created_at) VALUES (?,?,'s',?,?,'owner_coordinated','public','approved',1)").run(id,id,now+(i+2)*86400000,now+(i+2)*86400000+3600000);
+  }
+  const first=await conversationInbox(env,owner),second=await conversationInbox(env,owner,new URLSearchParams({visitors_after:first.visitorsNext}));
+  assert.equal(first.visitors.length,100);assert.equal(second.visitors.length,6);assert.equal(second.visitorsNext,null);
+  assert.equal(new Set([...first.visitors,...second.visitors].map(v=>v.id)).size,106);
+  const own=await conversationInbox(env,visitor,new URLSearchParams({visitors_after:first.visitorsNext}));assert.deepEqual(own.visitors.map(v=>v.id),['v']);
+  await assert.rejects(conversationInbox(env,owner,new URLSearchParams({visitors_after:'[1,"x"]'})),/Invalid/);
+ }finally{db.close();}
+});
+test('history loads newest then earlier pages with stable revision boundaries and private author labels',async()=>{
+ const {db,env}=setup();try{
+  const {id}=await changeConversation(env,owner,create());
+  const insert=db.prepare("INSERT INTO conversation_entries(id,thread_id,actor_role,actor_id,actor_label,kind,body,created_at,thread_revision,request_key,request_signature) VALUES (?,?,'owner','o','one@example.com','message','Fixture',1,?,?,?)");
+  for(let i=2;i<=205;i++)insert.run('e'+i,id,i,'key'+i,'signature');
+  db.prepare('UPDATE conversation_threads SET revision=205 WHERE id=?').run(id);
+  const recent=await conversationHistory(env,visitor,id);assert.equal(recent.entries.length,100);assert.equal(recent.entries[0].thread_revision,106);assert.equal(recent.before,'106');
+  await changeConversation(env,owner,reply(id,205));
+  const middle=await conversationHistory(env,visitor,id,recent.before),oldest=await conversationHistory(env,visitor,id,middle.before);
+  assert.equal(middle.entries.length,100);assert.equal(oldest.entries.length,5);assert.equal(oldest.before,null);
+  const entries=[...oldest.entries,...middle.entries,...recent.entries];assert.deepEqual(entries.map(e=>e.thread_revision),Array.from({length:205},(_,i)=>i+1));
+  assert.ok(entries.every(e=>e.actor_label==='Owner'));assert.ok(!JSON.stringify(entries).includes('one@example.com'));
+  await assert.rejects(conversationHistory(env,stranger,id,recent.before),ConversationConflict);
+  for(const before of ['0','-1','1.5','NaN','9007199254740992'])await assert.rejects(conversationHistory(env,visitor,id,before),/Invalid/);
+ }finally{db.close();}
+});
 test('inbox and history expose only the intended thread fields for either actor',async()=>{
  const {db,env}=setup();try{
   const input=create(),created=await changeConversation(env,owner,input);

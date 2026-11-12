@@ -17,7 +17,7 @@ export function conversationRoute(role:'owner'|'visitor'):APIRoute{return async(
   if(input){await limit(env,`conversation:${role}:${user.id}`,30,60000);return json(await changeConversation(env,actor,input));}
   const thread=url.searchParams.get('thread');
   if(thread&&thread.length>64)return json({error:'Invalid conversation.'},400);
-  return json(thread?await conversationHistory(env,actor,thread):await conversationInbox(env,actor));
+  return json(thread?await conversationHistory(env,actor,thread,url.searchParams.get('before')):await conversationInbox(env,actor,url.searchParams));
  }catch(error){
   if(error instanceof RateLimitError)return json({error:'Too many message actions. Please wait a minute.'},429);
   if(error instanceof ConversationConflict)return json({error:error.message},409);
