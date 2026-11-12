@@ -3,10 +3,38 @@ import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {readFileSync,readdirSync} from 'node:fs';
 import {fixture} from './helpers/d1.mjs';
-import {changePunchList,readPunchList,PunchError} from '../src/server/punch-list.ts';
+import {changePunchList,readPunchList,PunchError,PunchValidationError} from '../src/server/punch-list.ts';
 function setup(){const f=fixture();f.db.exec("INSERT INTO owner_accounts(id,email_normalized,status,created_at) VALUES ('a','a@example.com','active',1),('b','b@example.com','active',1),('removed','removed@example.com','removed',1)");return f;}
 const item=(label='Repair latch')=>({action:'create',id:crypto.randomUUID(),label});
 const change=(action,id,revision)=>({action,id,revision});
+test('single create and edit reject control characters before trimming without mutating rows',async()=>{
+ const {db,env}=setup();try{
+  const original=item();await changePunchList(env,'a',original);
+  for(const char of ['\n','\r','\t','\u0000','\u0007','\u007f','\u0085','\u2028','\u2029']){
+   for(const label of ['Fix'+char+'door',char+'Fix door','Fix door'+char]){
+    await assert.rejects(changePunchList(env,'a',item(label)),PunchValidationError);
+    await assert.rejects(changePunchList(env,'b',{...change('edit',original.id,1),label}),PunchValidationError);
+   }
+  }
+  assert.equal(db.prepare('SELECT count(*) n FROM punch_tasks').get().n,1);
+  assert.equal(db.prepare('SELECT label FROM punch_tasks').get().label,original.label);
+  assert.equal(db.prepare('SELECT revision FROM punch_tasks').get().revision,1);
+  await changePunchList(env,'a',item('  Café door | 北  '));
+  assert.ok((await readPunchList(env,'a',new URLSearchParams())).items.some(i=>i.label==='Café door | 北'));
+  await assert.rejects(changePunchList(env,'a',{...item(),id:'bad\nidentifier'}),e=>e instanceof PunchValidationError&&/identifier/.test(e.message));
+ }finally{db.close();}
+});
+test('bulk entry rejects control characters atomically but accepts CRLF row separators',async()=>{
+ const {db,env}=setup();try{
+  for(const char of ['\t','\u0007','\u007f','\u0085','\u2028']){
+   await assert.rejects(changePunchList(env,'a',{action:'bulk-create',id:crypto.randomUUID(),labels:'Good\n'+char+'Bad'}),e=>e instanceof PunchValidationError&&/Line 2/.test(e.message));
+  }
+  assert.equal(db.prepare('SELECT count(*) n FROM punch_tasks').get().n,0);
+  assert.equal(db.prepare('SELECT count(*) n FROM punch_batches').get().n,0);
+  await changePunchList(env,'a',{action:'bulk-create',id:crypto.randomUUID(),labels:'  First \r\n\r\nSecond\rThird'});
+  assert.equal(db.prepare('SELECT count(*) n FROM punch_tasks').get().n,3);
+ }finally{db.close();}
+});
 test('any active owner edits, completes and reopens without claiming; completion retains actor',async()=>{
  const {db,env}=setup();try{
  const i=item();await changePunchList(env,'a',i);await changePunchList(env,'a',i);assert.equal((await readPunchList(env,'b',new URLSearchParams())).items.length,1);

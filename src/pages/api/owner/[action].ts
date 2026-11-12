@@ -3,9 +3,9 @@ import { runtime } from '../../../server/runtime';
 import { configured, body, json, normalizeEmail } from '../../../server/env';
 import { getOwner } from '../../../server/owner-auth';
 import { setVisitorDemo } from '../../../server/settings';
-import { inviteOwner } from '../../../server/owners';
+import {inviteOwner,removeOwner,OwnerConflictError,OwnerNotFoundError,OwnerInvitationDeliveryError} from '../../../server/owners';
 import { digest,equal } from '../../../server/crypto';
-import { limit } from '../../../server/visitor-auth';
+import {limit,RateLimitError} from '../../../server/rate-limit';
 export const prerender=false;
 export const POST:APIRoute=async({request,params})=>{
  const env=runtime();if(!configured(env,request))return json({error:'Owner service is not configured.'},503);
@@ -23,14 +23,21 @@ export const POST:APIRoute=async({request,params})=>{
    await setVisitorDemo(env,owner.id,input.enabled);return json({ok:true,enabled:input.enabled});
   }
   await limit(env,'owner-management:'+owner.id,10,3600000);
-  if(params.action==='invite') {await inviteOwner(env,normalizeEmail(input.email),owner.id);return json({ok:true});}
-  if(params.action==='remove' && typeof input.id==='string') {
-   await env.DB.batch([
-    env.DB.prepare("INSERT INTO audit_events(id,actor_id,action,subject_id,created_at) SELECT ?,?,'owner_removed',id,? FROM owner_accounts WHERE id=? AND status!='removed'").bind(crypto.randomUUID(),owner.id,Date.now(),input.id),
-    env.DB.prepare("UPDATE owner_accounts SET status='removed' WHERE id=? AND status!='removed'").bind(input.id),
-    env.DB.prepare('DELETE FROM auth_session WHERE user_id=(SELECT auth_subject FROM owner_accounts WHERE id=?)').bind(input.id),
-   ]);return json({ok:true});
+  if(params.action==='invite') {
+   let email:string;try{email=normalizeEmail(input.email);}catch{return json({error:'Enter a valid email address.'},400);}
+   await inviteOwner(env,email,owner.id);return json({ok:true});
+  }
+  if(params.action==='remove') {
+   if(typeof input.id!=='string'||!input.id.trim()||input.id.length>64||/[\u0000-\u001f\u007f]/.test(input.id))return json({error:'Invalid owner identifier.'},400);
+   await removeOwner(env,input.id,owner.id);return json({ok:true});
   }
   return json({error:'Not found.'},404);
- }catch{return json({error:'Unable to complete this action. Active or pending accounts cannot be reinvited and the last active owner cannot be removed. If an invitation was saved but email failed, use the password setup link on sign-in.'},400);}
+ }catch(error){
+  if(error instanceof OwnerInvitationDeliveryError)return json({error:error.message,invitationSaved:true},error.retryAfter?429:503,error.retryAfter?{'Retry-After':String(error.retryAfter)}:{});
+  if(error instanceof RateLimitError)return json({error:'Too many owner-management requests. Please try again later.'},429,{'Retry-After':String(error.retryAfter)});
+  if(error instanceof OwnerConflictError)return json({error:error.message},409);
+  if(error instanceof OwnerNotFoundError)return json({error:error.message},404);
+  if(error instanceof Error&&/^(Invalid |Request too large)/.test(error.message))return json({error:'Invalid request.'},400);
+  return json({error:'Unable to confirm this action. Refresh to check the owner accounts before retrying.'},503);
+ }
 };
