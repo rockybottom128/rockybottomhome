@@ -1,0 +1,16 @@
+<nav aria-label="Dashboard sections" class="dashboard-jump"><details id="dashboard-menu"><summary>Jump to…</summary><div>
+<a href="#punch-list">Punch list</a>
+<strong>Messages &amp; showings</strong><a href="#messages">Messages</a><a href="#showing-calendar">Showing calendar</a><a href="#selected-showings">Selected-day bookings</a><a href="#shared-availability">Manage availability</a>
+<strong>Email</strong><a href="#visitor-allowlist">Email rules</a><a href="#email-verifications">Verifications</a><a href="#booking-email-attention">Delivery issues</a><a href="#report-history">Punch-list reports</a>
+<strong>System</strong><a href="#service-status">Service connections</a><a href="#owner-accounts">Owner accounts</a><a href="#website-stats">Website statistics</a><a href="#shared-activity">Activity log</a>
+</div></details></nav>
+<script>
+const menu=document.querySelector<HTMLDetailsElement>('#dashboard-menu')!;
+menu.addEventListener('keydown',e=>{if(e.key==='Escape'){menu.open=false;menu.querySelector('summary')?.focus();}});
+menu.querySelectorAll<HTMLAnchorElement>('a').forEach(a=>a.addEventListener('click',()=>{const target=document.querySelector<HTMLElement>(a.hash);if(target instanceof HTMLDetailsElement)target.open=true;menu.open=false;if(target){target.tabIndex=-1;target.focus({preventScroll:true});}}));
+document.addEventListener('click',e=>{if(!menu.contains(e.target as Node))menu.open=false;});
+</script>
+<style>
+.dashboard-jump{position:sticky;top:var(--dashboard-top-height,180px);z-index:19;background:#f5f3ec;padding:.5rem 0}.dashboard-jump summary{cursor:pointer;padding:.6rem 1rem;border:1px solid #ccd5ca;border-radius:8px;width:max-content}.dashboard-jump details>div{position:absolute;background:#fff;box-shadow:0 6px 20px #0003;padding:1rem;max-height:60vh;overflow:auto;min-width:240px;max-width:calc(100vw - 60px)}.dashboard-jump a,.dashboard-jump strong{display:block;padding:.45rem}.dashboard-jump strong{margin-top:.5rem}
+</style>
+<style is:global>.owner-dashboard-page main [id]{scroll-margin-top:calc(var(--dashboard-top-height,180px) + 80px)}.owner-dashboard-page main>section{margin-block:2rem}.owner-dashboard-page main>section>.card{margin-block:1rem}</style>

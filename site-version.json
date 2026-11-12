@@ -1,14 +1,14 @@
 {
   "schema": 1,
-  "version": "0.5.0.0",
+  "version": "0.6.0.0",
   "stage": "prelaunch",
   "base": {
-    "commit": "fc784025f46c0571e19333cd67f8807ec374656c",
-    "version": "0.4.3.0",
+    "commit": "a973351987533970699901d4c127180fc262d9eb",
+    "version": "0.5.0.0",
     "stage": "prelaunch"
   },
   "change": {
     "level": "feature",
-    "reason": "Add a simple shared owner punch list with inline editing, sortable columns and optional completed items"
+    "reason": "Reorganize owner dashboard and add duplicate-aware bulk entry and private punch-list report emailing"
   }
 }

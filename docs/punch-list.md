@@ -13,3 +13,70 @@ Migration 0011 is retained because it was already applied to the local preview. 
 Apply pending migrations locally with `npm run db:migrate:local`, build with `npm run build:auth-local`, and restart the local authenticated preview on port 4324 with its existing settings and persistent database. Do not reset accounts or test data. Run `npm run test:punch-list`, TypeScript, security, and version checks. Tests use disposable databases and cover record migration, owner permissions, stale updates, removed functionality, global sorting, pagination, and the completed-items switch.
 
 Shared development publication requires an approved batch. Production migration is a separately reviewed action; apply through 0012 before deploying this code. This document does not authorize remote changes.
+
+## Dashboard batch: bulk entry and report email
+
+The punch list starts collapsed. Its summary tile and Jump to menu expand it. The
+menu groups Messages & showings, Email, and System. The dashboard automation
+sample is removed; the separate demo page remains unchanged. Service status
+separates a working login/database request from configured (not delivery-tested)
+mail. Analytics are explicitly unavailable until authorized Cloudflare access
+and dataset configuration are verified.
+
+Multiple-entry mode accepts CRLF, LF or CR separated names, trims each line and
+ignores blank lines. It warns about repeated names before saving. The existing
+120-character limit applies to each name; at most 100 nonblank lines are saved
+in one atomic transaction. A stored request identity prevents duplicate retries;
+a changed payload under that identity is rejected. Duplicate checks compare NFKC-normalized, case-insensitive names with collapsed whitespace, both within the paste and against existing open/completed tasks. The entire batch is rejected with line numbers until edited or the sender explicitly checks the duplicate override. The override keeps every line; no existing tasks are removed. Successful request retries are recognized before duplicate checks. Single entry remains available.
+
+Report preparation snapshots all matching items in the current global sort,
+independent of pagination. It records the browser time zone and snapshot time.
+More than 2,000 matching items is rejected rather than silently truncated. Up to
+10 distinct recipients can be selected from active/invited owners or typed as
+custom addresses. Custom addresses never receive creator/completer email
+attribution; this also wins when the same address is both selected and typed.
+Listed owners receive attribution, including invited owners. No accounts or
+visitor email rules are created or altered. Owner status is checked again before
+sending to a listed owner. All report actions require an active sender.
+
+The report preview is immutable. Each recipient gets a separate escaped HTML
+report plus plain text, through the existing sender/reply-to configuration.
+Report history distinguishes provider acceptance from inbox delivery. Only
+pending or preflight-failed deliveries can be retried by the original sender;
+sending/uncertain outcomes require provider investigation. Partial success is
+shown per recipient. The existing global/recipient limits also apply, plus a
+20-actions-per-owner/hour report limit. Prepared but unsent reports remain in
+history. There is no automatic sending worker or retention cleanup in this batch.
+
+Migration 0013 adds batch identities, report snapshots and recipient delivery
+records, without modifying existing rows. Apply locally before the updated
+preview, preserving the persistent database. Remote migration/publication remains
+separately authorized. Reports contain private task data: keep backups private
+and establish a retention policy before wider use.
+
+Tests use disposable SQLite/D1 fixtures and local fake mail. The authenticated
+integration suite covers same-origin and owner gates, a 55-item report and
+idempotent sending without contacting Resend. Do not run real-mail report tests
+without explicit recipient/send authorization.
+
+## Local review corrections
+
+The visibility switch says Show punch list or Hide punch list and exposes its
+state to assistive technology. Activity is last in System and in its jump-menu
+group. Entry failures appear immediately below the input, retain the draft and
+receive focus. List refresh does not erase that entry feedback.
+
+Capability checks detect absent migration-0013 tables without changing the
+database. Bulk submission and report preview are disabled with an explicit
+approval/update message until those tables exist; single-item actions remain
+available. Authenticated APIs also reject blocked actions before rate-limit
+writes and return an actionable setup error. Report history shows the same
+reason rather than a generic failure. This does not apply the migration.
+
+Report delivery mode is shown before sending. In local test mode the action is
+labelled Save local test report (no email), and results/history say Saved locally
+in test mode — NO email sent. Historical labels use each delivery's saved
+local-test receipt, not the current configuration. Real provider acceptance
+remains explicitly unconfirmed inbox delivery. Send requests confirm the mode
+shown to the owner; a changed mode requires review before sending. No mail
+configuration was changed by this correction.

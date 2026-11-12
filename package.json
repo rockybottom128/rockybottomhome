@@ -58,7 +58,7 @@
 		"test:build-target": "node --test tests/build-target.test.mjs",
 		"test:availability": "node --experimental-strip-types --test tests/availability.test.mjs",
 		"test:booking": "node --experimental-strip-types --test tests/visitor-profile.test.mjs tests/bookings.test.mjs tests/allowlist.test.mjs",
-		"test:punch-list": "node --experimental-strip-types --test tests/punch-list.test.mjs",
+		"test:punch-list": "node --experimental-strip-types --test tests/punch-list.test.mjs tests/punch-reports.test.mjs",
 		"test:messages": "node --experimental-strip-types --test tests/conversations.test.mjs"
 	},
 	"type": "module"

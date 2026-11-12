@@ -51,7 +51,7 @@ test('removed owners and retired actions are rejected; names are bounded plain t
 });
 test('migration preserves existing names, creation and completion, retaining retired fields in legacy snapshot',()=>{
  const db=new DatabaseSync(':memory:');try{
- db.exec('PRAGMA foreign_keys=ON');for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')&&!f.startsWith('0012')).sort())db.exec(readFileSync('migrations/'+f,'utf8'));
+ db.exec('PRAGMA foreign_keys=ON');for(const f of readdirSync('migrations').filter(f=>f.endsWith('.sql')&&f<'0012').sort())db.exec(readFileSync('migrations/'+f,'utf8'));
  db.exec("INSERT INTO owner_accounts(id,email_normalized,status,created_at) VALUES ('a','a@example.com','active',1); INSERT INTO punch_items VALUES ('one','Existing','Old description','general','a','a',100,200,NULL,3),('two','Finished','History','general','a','a',100,300,300,4)");
  db.exec(readFileSync('migrations/0012_simple_punch_list.sql','utf8'));
  const open=db.prepare("SELECT * FROM punch_tasks WHERE id='one'").get(),done=db.prepare("SELECT * FROM punch_tasks WHERE id='two'").get();assert.equal(open.label,'Existing');assert.equal(open.created_at,100);assert.equal(open.completed_by,null);assert.equal(done.completed_by,'a');assert.equal(done.completed_at,300);assert.equal(done.revision,4);assert.equal(db.prepare("SELECT description FROM punch_items WHERE id='one'").get().description,'Old description');
