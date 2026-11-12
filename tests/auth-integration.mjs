@@ -247,6 +247,17 @@ try {
  assert.equal((await post('/api/owner/messages',answer,secondCookie)).status,401);
  assert.equal((await post('/api/owner/messages',answer,ownerCookie)).status,200);
  const full=await (await fetch(base+'/api/visitor/messages?thread='+thread.id,{headers:{cookie:visitorCookie}})).json();assert.equal(full.entries.length,2);assert.equal(full.thread.status,'waiting_visitor');assert.equal(full.entries[1].actor_label,'Owner');
+ assert.equal(inbox.attention,1);assert.equal(inbox.next,null);
+ for(const query of ['after=bad','visitors_after=bad','thread='+thread.id+'&before=-1'])assert.equal((await fetch(base+'/api/owner/messages?'+query,{headers:{cookie:ownerCookie}})).status,400);
+ const earlier=await (await fetch(base+'/api/visitor/messages?thread='+thread.id+'&before=2',{headers:{cookie:visitorCookie}})).json();assert.equal(earlier.entries.length,1);assert.equal(earlier.entries[0].thread_revision,1);
+ const originalTimes=db.prepare('SELECT starts_at,ends_at FROM bookings WHERE id=?').get(booking.id);
+ db.prepare('UPDATE bookings SET starts_at=?,ends_at=? WHERE id=?').run(Date.now()-32*86400000,Date.now()-31*86400000,booking.id);
+ const expiredInbox=await (await fetch(base+'/api/visitor/messages',{headers:{cookie:visitorCookie}})).json();assert.equal(expiredInbox.visitors.length,0);assert.equal(expiredInbox.threads.length,1);
+ assert.equal((await post('/api/visitor/messages',{...conversationInput,request_key:crypto.randomUUID()},visitorCookie)).status,409);
+ assert.equal((await post('/api/owner/messages',{...conversationInput,visitor_id:full.thread.visitor_id,request_key:crypto.randomUUID()},ownerCookie)).status,409);
+ assert.equal((await post('/api/visitor/messages',{action:'reply',thread_id:thread.id,revision:2,body:'An existing conversation still works.',request_key:crypto.randomUUID()},visitorCookie)).status,200);
+ db.prepare('UPDATE bookings SET starts_at=?,ends_at=? WHERE id=?').run(originalTimes.starts_at,originalTimes.ends_at,booking.id);
+
  assert.equal((await post('/api/visitor/messages',{...answer,request_key:crypto.randomUUID()},visitorCookie)).status,409);
  assert.equal((await fetch(base+'/viewings/messages/',{headers:{cookie:visitorCookie}})).status,200);
  await post('/api/owner/visitor-demo',{enabled:false},ownerCookie);

@@ -1,14 +1,14 @@
 {
   "schema": 1,
-  "version": "0.6.5.0",
+  "version": "0.6.6.0",
   "stage": "prelaunch",
   "base": {
-    "commit": "c943641b251d9e8ad8daf6c4c8ca2e2c9ed0e5d8",
-    "version": "0.6.4.0",
+    "commit": "7619e7d98c4428bc6e3bab2b43cc978d99188604",
+    "version": "0.6.5.0",
     "stage": "prelaunch"
   },
   "change": {
     "level": "update",
-    "reason": "Add audited owner review for uncertain booking and report emails without enabling resend"
+    "reason": "Bound new conversation eligibility to 30 days after a viewing and page message lists and history"
   }
 }

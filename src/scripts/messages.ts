@@ -1,6 +1,7 @@
 type Thread={id:string;visitor_id:string;email_normalized:string;subject:string;status:string;revision:number;created_at:number;updated_at:number;preview:string;booking_id?:string|null};
 type Entry={id:string;actor_role:string;actor_label:string;kind:string;body:string;created_at:number;thread_revision:number};
-type Inbox={threads:Thread[];visitors:{id:string;email_normalized:string}[]};
+type Inbox={threads:Thread[];visitors:{id:string;email_normalized:string}[];attention?:number;next?:string|null;visitorsNext?:string|null};
+type MessageHistory={thread:Thread;entries:Entry[];before?:string|null};
 const labels:Record<string,string>={needs_owner:'Needs owner reply',waiting_visitor:'Waiting for visitor',resolved:'Resolved / No reply needed',external:'Continued outside website'};
 const date=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',dateStyle:'medium',timeStyle:'short'});
 function append(parent:HTMLElement,...children:Node[]){for(const child of children)parent.appendChild(child);}
@@ -12,7 +13,10 @@ for(const root of document.querySelectorAll<HTMLElement>('[data-messages]')){
  let inbox:Inbox={threads:[],visitors:[]},visitorId='',selected:Thread|null=null,isNew=false,loading=0,mutating=false;
  const drafts=new Map<string,{body:string;subject:string;visitor:string}>();
  const pending=new Map<string,{signature:string;input:Record<string,unknown>}>();
- let savedThreadToRefresh='';
+ let savedThreadToRefresh='',inboxGeneration=0,pageBusy=false;
+ let historyEntries:Entry[]=[],historyBefore:string|null=null;
+ function merge<T extends {id:string}>(old:T[],page:T[]){const rows=new Map(old.map(r=>[r.id,r]));for(const row of page)rows.set(row.id,row);return [...rows.values()];}
+ function pageControls(){q<HTMLButtonElement>('[data-more-threads]').hidden=!inbox.next;q<HTMLButtonElement>('[data-more-visitors]').hidden=!inbox.visitorsNext;for(const name of ['threads','visitors'])q<HTMLButtonElement>(`[data-more-${name}]`).disabled=pageBusy||mutating;q('[data-page-notice]').textContent=`${inbox.threads.length} conversations loaded.${inbox.next?' Load more to find older conversations.':''} Filters search loaded conversations only.`;}
  const samples=sampleInbox();
  const endpoint=()=>`/api/${owner?'owner':'visitor'}/messages`;
  function status(text:string,error=false){notice.textContent=text;notice.classList.toggle('error',error);}
@@ -24,15 +28,36 @@ for(const root of document.querySelectorAll<HTMLElement>('[data-messages]')){
   const data=await response.json() as {error?:string};if(!response.ok){if(response.status===409&&input)pending.delete(draftKey());throw Error(data.error??'Messages could not be loaded.');}return data as T;
  }
  async function loadInbox(){
-  inbox=demo?{threads:structuredClone(samples.threads).filter(t=>owner||t.visitor_id==='sample-a'),visitors:samples.visitors.filter(v=>owner||v.id==='sample-a')}:await request<Inbox>();
-  const previous=recipient.value;recipient.replaceChildren(...inbox.visitors.map(v=>{const o=el('option',v.email_normalized);o.value=v.id;return o;}));
-  if(inbox.visitors.some(v=>v.id===previous))recipient.value=previous;
+  const generation=++inboxGeneration;
+  const value=demo?{threads:structuredClone(samples.threads).filter(t=>owner||t.visitor_id==='sample-a'),visitors:samples.visitors.filter(v=>owner||v.id==='sample-a')}:await request<Inbox>();
+  if(generation!==inboxGeneration)return;inbox=value;
+  recipients();
   q('[data-attention-filter]').hidden=!owner;
-  const count=inbox.threads.filter(t=>t.status==='needs_owner').length;
+  const count=inbox.attention??inbox.threads.filter(t=>t.status==='needs_owner').length;
   document.querySelectorAll('[data-message-count]').forEach(e=>e.textContent=String(count));
   q<HTMLButtonElement>('[data-new]').disabled=!inbox.visitors.length;
-  renderList();
+  renderList();pageControls();
  }
+ function recipients(){
+  const previous=recipient.value;recipient.replaceChildren(...inbox.visitors.map(v=>{const o=el('option',v.email_normalized);o.value=v.id;return o;}));
+  // Refresh can remove a selected recipient from the loaded page. Require a
+  // deliberate choice instead of silently addressing the draft to someone else.
+  const option=el('option',previous&&!inbox.visitors.some(v=>v.id===previous)?'Choose a visitor — previous choice is not loaded':'Choose a visitor');option.value='';option.disabled=true;option.selected=true;recipient.insertBefore(option,recipient.firstChild);
+  if(inbox.visitors.some(v=>v.id===previous))recipient.value=previous;
+ }
+ async function more(which:'threads'|'visitors'){
+  if(pageBusy||mutating)return;
+  const next=which==='threads'?inbox.next:inbox.visitorsNext;if(!next)return;
+  const generation=inboxGeneration;pageBusy=true;pageControls();
+  try{
+   const page=await request<Inbox>('?'+(which==='threads'?'after':'visitors_after')+'='+encodeURIComponent(next));
+   if(generation!==inboxGeneration)return;
+   if(which==='threads'){inbox.threads=merge(inbox.threads,page.threads);inbox.next=page.next;renderList();renderThreads();}
+   else{inbox.visitors=merge(inbox.visitors,page.visitors);inbox.visitorsNext=page.visitorsNext;recipients();}
+  }catch(e){if(generation===inboxGeneration)status((e as Error).message,true);}
+  finally{pageBusy=false;pageControls();}
+ }
+ q('[data-more-threads]').onclick=()=>void more('threads');q('[data-more-visitors]').onclick=()=>void more('visitors');
  function renderList(){
   list.replaceChildren();const text=search.value.trim().toLowerCase();
   const all=inbox.threads.filter(t=>(!owner||!needs.checked||t.status==='needs_owner')&&`${t.email_normalized} ${t.subject}`.toLowerCase().includes(text));
@@ -41,11 +66,11 @@ for(const root of document.querySelectorAll<HTMLElement>('[data-messages]')){
    const latest=threads[0],count=inbox.threads.filter(t=>t.visitor_id===id&&t.status==='needs_owner').length;
    const b=el('button','','message-visitor');b.type='button';b.setAttribute('aria-pressed',String(visitorId===id));
    append(b,el('strong',owner?latest.email_normalized:'Your conversations'));
-   if(count)append(b,el('span',`${count} ${count===1?'thread needs':'threads need'} owner reply`,'message-badge'));
+   if(count)append(b,el('span',`${count} ${count===1?'loaded thread needs':'loaded threads need'} owner reply`,'message-badge'));
    append(b,el('small',latest.subject),el('small',latest.preview.slice(0,85)),el('small',date.format(latest.updated_at)+' ET'));
    b.onclick=()=>{if(mutating)return;remember();visitorId=id;void selectThread(threads[0].id);};append(list,b);
   }
-  if(!groups.size)append(list,el('p',inbox.threads.length?'No conversations match this filter.':inbox.visitors.length?'No conversations yet. Start a new topic above.':'Messages become available after a verified visitor submits a viewing request.','hint'));
+  if(!groups.size)append(list,el('p',inbox.threads.length?'No conversations match this filter.':inbox.visitors.length?'No conversations yet. Start a new topic above.':'No eligible viewing for a new conversation. Existing conversations remain available.','hint'));
  }
  function renderThreads(){
   threadList.replaceChildren();if(!visitorId)return;
@@ -66,16 +91,22 @@ for(const root of document.querySelectorAll<HTMLElement>('[data-messages]')){
  async function selectThread(id:string,preserveDraft=true){
   const token=++loading;compose.hidden=true;status('Loading conversation…');
   try{
-   const data=demo?{thread:samples.threads.find(t=>t.id===id)!,entries:samples.entries[id]??[]}:await request<{thread:Thread;entries:Entry[]}>('?thread='+encodeURIComponent(id));
+   const data:MessageHistory=demo?{thread:samples.threads.find(t=>t.id===id)!,entries:samples.entries[id]??[]}:await request<MessageHistory>('?thread='+encodeURIComponent(id));
    if(token!==loading)return;
    selected={...inbox.threads.find(t=>t.id===id),...data.thread};visitorId=selected!.visitor_id;isNew=false;
-   root.classList.add('has-selection');renderList();renderThreads();renderHistory(data.entries);showComposer(false);if(preserveDraft)restore();updateCloseControls();status('');
+   root.classList.add('has-selection');renderList();renderThreads();historyEntries=data.entries;historyBefore=data.before??null;renderHistory(historyEntries);showComposer(false);if(preserveDraft)restore();updateCloseControls();status('');
   }catch(e){if(token===loading)status((e as Error).message,true);}
  }
  function renderHistory(entries:Entry[]){
   history.replaceChildren(el('h3',selected!.subject),el('span',labels[selected!.status],'badge'));
   if(selected!.booking_id){const a=el('a','View related showing request');a.href=owner?'/owner/dashboard/#selected-showings':'/viewings/status/';a.className='text-button';append(history,a);}
-  const ul=el('ol','','message-history');ul.setAttribute('aria-label','Full conversation history');
+  if(historyBefore){const older=el('button','Load earlier messages','text-button');older.type='button';older.onclick=async()=>{
+   if(mutating)return;const token=loading,id=selected!.id,before=historyBefore;older.disabled=true;
+   try{const page=await request<MessageHistory>('?thread='+encodeURIComponent(id)+'&before='+encodeURIComponent(before!));if(token!==loading||selected?.id!==id)return;
+    historyEntries=merge(page.entries,historyEntries);historyBefore=page.before??null;renderHistory(historyEntries);updateCloseControls();
+   }catch(e){if(token===loading)status((e as Error).message,true);}finally{older.disabled=false;}
+  };append(history,older);}
+  const ul=el('ol','','message-history');ul.setAttribute('aria-label',historyBefore?'Loaded conversation history':'Full conversation history');
   for(const entry of entries){
    const li=el('li','','message-bubble '+(entry.actor_role==='owner'?'owner':''));
    // Keep owner email private on the visitor side, while distinguishing the author on the owner dashboard.
@@ -113,7 +144,7 @@ for(const root of document.querySelectorAll<HTMLElement>('[data-messages]')){
    if(action==='create'||action==='reply'){drafts.delete(beforeKey);body.value='';}
    compose.hidden=true;await loadInbox();await selectThread(result.id);savedThreadToRefresh='';status(demo?'Saved in this sample tab only.':'Saved on the website.');
   }catch(e){status(saved?'Saved on the website, but history could not refresh. Use Refresh messages.':(e as Error).message,true);}
-  finally{mutating=false;root.querySelectorAll<HTMLButtonElement>('button').forEach(b=>b.disabled=false);body.readOnly=false;subject.readOnly=false;recipient.disabled=!isNew;q<HTMLButtonElement>('[data-new]').disabled=!inbox.visitors.length;updateCloseControls();}
+  finally{mutating=false;root.querySelectorAll<HTMLButtonElement>('button').forEach(b=>b.disabled=false);body.readOnly=false;subject.readOnly=false;recipient.disabled=!isNew;q<HTMLButtonElement>('[data-new]').disabled=!inbox.visitors.length;updateCloseControls();pageControls();}
  }
  function sampleSend(input:Record<string,unknown>){
   const now=Date.now(),id=input.action==='create'?crypto.randomUUID():String(input.thread_id);let t=samples.threads.find(t=>t.id===id);
