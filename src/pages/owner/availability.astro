@@ -2,6 +2,12 @@
 export const prerender = false;
 import { timeLabel } from '../../lib/viewings/calendar';
 import ViewingLayout from '../../layouts/ViewingLayout.astro';
+import { runtime } from '../../server/runtime';
+import { configured } from '../../server/env';
+import { getOwner } from '../../server/owner-auth';
+const env=runtime();
+if(!configured(env,Astro.request))return Astro.redirect('/owner/',303);
+if(!await getOwner(env,Astro.request))return Astro.redirect('/owner/',303);
 const times = Array.from({ length:97 },(_,i)=>`${String(Math.floor(i/4)).padStart(2,'0')}:${String(i%4*15).padStart(2,'0')}`);
 ---
 <ViewingLayout title="Owner availability">

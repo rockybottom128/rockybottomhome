@@ -1,14 +1,14 @@
 {
   "schema": 1,
-  "version": "0.6.6.0",
+  "version": "0.6.7.0",
   "stage": "prelaunch",
   "base": {
-    "commit": "7619e7d98c4428bc6e3bab2b43cc978d99188604",
-    "version": "0.6.5.0",
+    "commit": "27775dd17a50b11824134ad8fc39a8d8d7ff865e",
+    "version": "0.6.6.0",
     "stage": "prelaunch"
   },
   "change": {
     "level": "update",
-    "reason": "Bound new conversation eligibility to 30 days after a viewing and page message lists and history"
+    "reason": "Add independent sign-in checks before rendering owner availability and sample pages"
   }
 }

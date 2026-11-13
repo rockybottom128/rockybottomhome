@@ -20,6 +20,17 @@ async function post(path,data={},cookie='',origin=base,extra={}) {
 function mail(email) {return db.prepare('SELECT body FROM local_test_mail WHERE recipient=? ORDER BY created_at DESC LIMIT 1').get(email)?.body;}
 async function mailBudget(purpose){return db.prepare('SELECT count FROM request_limits WHERE key=?').get(await digest('mail-budget:'+purpose,env.OTP_SECRET))?.count??0;}
 function cookies(response){return response.headers.getSetCookie().map(s=>s.split(';')[0]).join('; ');}
+async function ownerPages(cookie='',allowed=false){
+ for(const [page,marker] of [['dashboard','PRIVATE OWNER DASHBOARD'],['availability','Owner availability | Rocky Bottom Home'],['demo','Sample owner dashboard']])for(const suffix of ['', '/']){
+  const path='/owner/'+page+suffix;
+  const response=await fetch(base+path,{headers:{cookie},redirect:'manual'});
+  assert.equal(response.status,allowed?200:303,path);
+  assert.equal(response.headers.get('cache-control'),'no-store',path);
+  if(allowed){const html=await response.text();assert.ok(html.includes(marker),path);}
+  else assert.equal(response.headers.get('location'),'/owner/',path);
+ }
+}
+
 try {
  db.exec('DELETE FROM request_limits');
  // Check the actual asset server and middleware, not just source declarations.
@@ -32,7 +43,8 @@ try {
   assert.equal(r.headers.get('strict-transport-security'),null,'HTTP local preview must not set HSTS: '+path);
   if(path==='/version.json')assert.equal(r.headers.get('cache-control'),'no-store');
  }
- for(const path of ['/owner/dashboard','/owner/demo/','/owner/availability/'])assert.equal((await fetch(base+path,{redirect:'manual'})).status,303);
+ await ownerPages();
+ await ownerPages('rb-owner.session_token=invalid-fixture-session');
  assert.equal((await post('/api/owner/invite',{email:'intruder@example.com'})).status,401);
  assert.equal((await post('/api/owner/visitor-demo',{enabled:true})).status,401);
  assert.equal((await post('/api/owner-auth/sign-up/email',{email:'intruder@example.com',password:'Not a real password.'})).status,404);
@@ -61,6 +73,7 @@ try {
  assert.equal(db.prepare("SELECT COUNT(*) n FROM audit_events WHERE action='owner_password_reset'").get().n,1,'Only completed password setup is audited');
  assert.equal((await post('/api/owner-auth/sign-in/email',{email:'owner@example.com',password:'wrong password'})).status,401);
  const login=await post('/api/owner-auth/sign-in/email',{email:'owner@example.com',password});assert.equal(login.status,200);const ownerCookie=cookies(login);
+ await ownerPages(ownerCookie,true);
  assert.equal((await post('/api/owner/visitor-demo',{enabled:false},ownerCookie)).status,200);
  assert.equal((await post('/api/visitor/send',{email:'visitor@example.com'})).status,403);
  assert.equal((await post('/api/visitor/verify',{email:'visitor@example.com',code:'00000000'})).status,403);
@@ -124,7 +137,7 @@ try {
  assert.equal((await calendar()).revision,2);
  assert.equal((await post('/api/owner/remove',{id:second.id},ownerCookie)).status,200);
  assert.equal((await post('/api/owner/remove',{id:second.id},ownerCookie)).status,404,'Repeated removal does not claim a new successful change');
- assert.equal((await fetch(base+'/owner/dashboard',{headers:{cookie:secondCookie},redirect:'manual'})).status,303,'Removed owner session is immediately invalidated');
+ await ownerPages(secondCookie); // Removed owners cannot access any owner page.
  assert.equal((await change({revision:2,action:'add',period:available},secondCookie)).status,401);
  db.exec("UPDATE email_challenges SET last_sent_at=0");
  assert.equal((await post('/api/visitor/send',{email:'VISITOR@example.com'})).status,200);
@@ -356,6 +369,6 @@ try {
  }
  const oldHistory=await fetch(base+'/api/owner/punch-reports',{headers:{cookie:ownerCookie}});assert.equal(oldHistory.status,503);assert.match((await oldHistory.json()).error,/database update/);
  await post('/api/owner-auth/sign-out',{},ownerCookie);
- assert.equal((await fetch(base+'/owner/dashboard',{headers:{cookie:ownerCookie},redirect:'manual'})).status,303);
+ await ownerPages(ownerCookie); // Sign-out invalidates access to every owner page.
  console.log('PASS: protected pages, owner password/reset/session, visitor OTP replay/concurrency/expiry/attempts, CSRF, ID reuse and last-owner protection. No real email sent.');
 } finally {db.close();}
